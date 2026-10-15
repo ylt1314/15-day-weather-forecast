@@ -2,21 +2,21 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
-  <title>全国气象预报系统（实时更新）</title>
+  <title>SkyPulse Weather Dashboard - 15天及中长期气象预报系统</title>
 
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com" onload="document.documentElement.classList.add('tailwind-ready')" onerror="document.documentElement.classList.add('tailwind-fallback')"></script>
 
   <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="document.documentElement.classList.add('fa-fallback')">
 
   <!-- Chart.js 曲线渲染引擎 -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" onerror="document.documentElement.classList.add('chart-fallback')"></script>
 
   <!-- Apache ECharts 矢量地图可视化引擎 -->
-  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js" onerror="document.documentElement.classList.add('echarts-fallback')"></script>
 
   <!-- Google Web Fonts (Inter & Plus Jakarta Sans) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -106,6 +106,173 @@
     .ambient-glow {
       animation: ambientPulse 8s ease-in-out infinite;
     }
+
+
+    /* 全国七大区域未来天气矩阵（新增模块，独立于原有组件样式） */
+    .region-matrix-shell { overflow: auto; max-width: 100%; border: 1px solid rgba(255,255,255,.16); border-radius: 16px; background: rgba(2,6,23,.18); }
+    .region-weather-table { border-collapse: separate; border-spacing: 0; min-width: max-content; width: 100%; font-variant-numeric: tabular-nums; }
+    .region-weather-table th, .region-weather-table td { border-bottom: 1px solid rgba(255,255,255,.09); border-right: 1px solid rgba(255,255,255,.055); padding: 7px 6px; text-align: center; white-space: nowrap; }
+    .region-weather-table thead th { position: sticky; top: 0; z-index: 8; background: rgba(15,23,42,.96); color: rgba(255,255,255,.76); font-size: 10px; font-weight: 800; min-width: 64px; }
+    .region-weather-table .region-sticky { position: sticky; left: 0; z-index: 5; min-width: 100px; width: 100px; max-width: 100px; background: rgba(30,41,59,.97); }
+    .region-weather-table .province-sticky { position: sticky; left: 100px; z-index: 4; min-width: 126px; width: 126px; max-width: 126px; background: rgba(30,41,59,.94); }
+    .region-weather-table thead .region-sticky, .region-weather-table thead .province-sticky { z-index: 12; background: rgba(15,23,42,.99); }
+    .region-weather-table .region-name-cell { vertical-align: middle; white-space: normal; line-height: 1.35; color: #fde68a; font-size: 11px; font-weight: 900; cursor: default; }
+    .region-weather-table .province-name-button { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; color: rgba(255,255,255,.88); font-size: 11px; font-weight: 800; text-align: left; }
+    .region-weather-table .province-name-button small { color: rgba(255,255,255,.4); font-size: 9px; font-weight: 500; }
+    .region-weather-table tbody tr { transition: background .15s ease; }
+    .region-weather-table tbody tr:hover td:not(.region-sticky):not(.province-sticky) { background: rgba(255,255,255,.055); }
+    .region-weather-table tbody tr.region-selected td { background-color: rgba(251,191,36,.09); }
+    .region-weather-table tbody tr.region-selected .province-sticky { box-shadow: inset 3px 0 0 #fbbf24; }
+    .region-weather-table .weather-cell { min-width: 64px; cursor: default; }
+    .region-weather-table .weather-cell .weather-temp { display: block; font-size: 11px; font-weight: 900; margin-top: 3px; }
+    .region-weather-table .weather-cell .weather-icon { font-size: 11px; }
+    .region-weather-table .weather-cell .weather-caption { display: block; max-width: 62px; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,.46); font-size: 8px; margin-top: 2px; }
+
+    .region-range-btn { padding: 7px 10px; border-radius: 9px; font-size: 11px; font-weight: 800; color: rgba(255,255,255,.7); transition: all .18s ease; }
+    .region-range-btn.active { color: #0f172a; background: rgba(255,255,255,.94); box-shadow: 0 3px 12px rgba(0,0,0,.15); }
+
+    .region-metric-btn { padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 800; color: rgba(255,255,255,.72); transition: all .18s ease; }
+    .region-metric-btn.active-max { background: rgba(245,158,11,.95); color: #1c1917; box-shadow: 0 5px 18px rgba(245,158,11,.2); }
+    .region-metric-btn.active-min { background: rgba(14,165,233,.95); color: #082f49; box-shadow: 0 5px 18px rgba(14,165,233,.2); }
+    .region-stat-card { border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.055); border-radius: 14px; padding: 12px; }
+    .region-stat-label { font-size: 10px; color: rgba(255,255,255,.58); }
+    .region-stat-value { font-size: 20px; line-height: 1.3; font-weight: 900; color: white; margin-top: 3px; }
+    .region-day-detail-table { border-collapse: separate; border-spacing: 0; min-width: 720px; width: 100%; }
+    .region-day-detail-table th, .region-day-detail-table td { padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,.09); text-align: left; white-space: nowrap; font-size: 11px; }
+    .region-day-detail-table th { color: rgba(255,255,255,.55); font-weight: 800; background: rgba(15,23,42,.35); }
+    /* 区域天气矩阵：浅色高对比配色，避免与页面深色背景混在一起 */
+    .region-matrix-shell {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, .12);
+      color: #334155;
+    }
+    .region-weather-table { color: #334155; background: #fff; }
+    .region-weather-table th, .region-weather-table td {
+      border-bottom: 1px solid #e2e8f0;
+      border-right: 1px solid #edf2f7;
+      color: #334155;
+    }
+    .region-weather-table thead th {
+      background: #eaf2fb;
+      color: #334155;
+      border-bottom: 1px solid #cbd5e1;
+    }
+    .region-weather-table .region-sticky,
+    .region-weather-table .province-sticky { background: #f7faff; }
+    .region-weather-table thead .region-sticky,
+    .region-weather-table thead .province-sticky { background: #eaf2fb; }
+    .region-weather-table .region-name-cell { color: #1d4ed8; }
+    .region-weather-table .province-name-button { color: #334155; }
+    .region-weather-table .province-name-button small { color: #64748b; }
+    .region-weather-table .weather-cell { background: #fff; }
+    .region-weather-table .weather-cell .weather-caption { color: #64748b; }
+    .region-weather-table tbody tr:hover td { background-color: #f1f7ff; }
+    .region-weather-table tbody tr:hover td.region-sticky,
+    .region-weather-table tbody tr:hover td.province-sticky { background: #eaf2fb; }
+    .region-weather-table tbody tr.region-selected td { background-color: #fff7e6; }
+    .region-weather-table tbody tr.region-selected .province-sticky { background: #fff3d6; box-shadow: inset 3px 0 0 #f59e0b; }
+    .region-weather-table .region-summary-row td { background: #eaf3ff; color: #334155; font-weight: 700; border-top: 1px solid #cbd5e1; }
+    .region-weather-table .region-summary-row .region-sticky { background: #dbeafe; color: #1e3a8a; }
+    .region-weather-table .region-summary-row .province-sticky { background: #eaf3ff; color: #1e40af; }
+    .region-weather-table .region-toggle-button {
+      display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+      color: #1e3a8a; font-size: 11px; font-weight: 900; line-height: 1.3;
+    }
+    .region-weather-table .region-toggle-icon {
+      flex: 0 0 17px; width: 17px; height: 17px; display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid #93c5fd; border-radius: 5px; background: #fff; color: #1d4ed8; font-size: 12px;
+    }
+    .region-weather-table .region-count { display: block; margin: 4px 0 0 23px; font-size: 9px; font-weight: 600; color: #64748b; }
+    .region-weather-table .province-name-button { padding: 2px 0; }
+    .region-weather-table .period-mean-cell { min-width: 88px; background: #f8fafc; color: #0f172a; font-size: 11px; font-weight: 900; }
+    .region-weather-table thead .period-mean-cell { background: #dce9f8; }
+    .region-weather-table .region-summary-row .period-mean-cell { background: #dbeafe; color: #1d4ed8; }
+    .region-weather-table .day-of-week { display: block; margin-top: 2px; color: #64748b; font-size: 9px; font-weight: 600; }
+    .region-weather-table .region-summary-row .weather-cell { background: #eaf3ff; }
+    .region-weather-table .region-summary-row .weather-caption { color: #64748b; }
+    .region-weather-table .fa-sun, .region-weather-table .fa-cloud-sun { color: #b45309; }
+    .region-weather-table .fa-cloud, .region-weather-table .fa-smog { color: #475569; }
+    .region-weather-table .fa-cloud-rain, .region-weather-table .fa-cloud-showers-heavy, .region-weather-table .fa-cloud-sun-rain { color: #0369a1; }
+    .region-weather-table .fa-snowflake { color: #0e7490; }
+    .region-weather-table .fa-cloud-bolt { color: #7c3aed; }
+    .region-matrix-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+    .region-matrix-actions .rule-note { color: rgba(255,255,255,.72); font-size: 11px; line-height: 1.6; }
+    .region-expand-all-btn {
+      border: 1px solid rgba(255,255,255,.35); border-radius: 9px; padding: 7px 11px;
+      color: #fff; background: rgba(255,255,255,.12); font-size: 11px; font-weight: 800;
+    }
+    .region-expand-all-btn:hover { background: rgba(255,255,255,.22); }
+    @media (max-width: 640px) {
+      .region-weather-table .region-sticky { min-width: 112px; width: 112px; max-width: 112px; }
+      .region-weather-table .province-sticky { left: 112px; min-width: 108px; width: 108px; max-width: 108px; }
+      .region-weather-table .period-mean-cell { min-width: 78px; }
+      .region-matrix-actions { align-items: flex-start; }
+    }
+
+    @media (max-width: 640px) {
+      .region-weather-table .region-sticky { min-width: 112px; width: 112px; max-width: 112px; }
+      .region-weather-table .province-sticky { left: 112px; min-width: 108px; width: 108px; max-width: 108px; }
+      .region-weather-table th, .region-weather-table td { padding: 6px 4px; }
+      .region-weather-table thead th { min-width: 58px; }
+      .region-weather-table .weather-cell { min-width: 58px; }
+    }
+
+
+
+    /* CDN 资源加载失败时的跨浏览器基础降级样式；正常加载 Tailwind 时不生效 */
+    html.tailwind-fallback body { margin: 0; min-height: 100vh; color: #f8fafc; background: #0f172a; overflow-x: hidden; }
+    html.tailwind-fallback * { box-sizing: border-box; }
+    html.tailwind-fallback .flex { display: flex; }
+    html.tailwind-fallback .inline-flex { display: inline-flex; }
+    html.tailwind-fallback .grid { display: grid; }
+    html.tailwind-fallback .hidden { display: none !important; }
+    html.tailwind-fallback .block { display: block; }
+    html.tailwind-fallback .relative { position: relative; }
+    html.tailwind-fallback .absolute { position: absolute; }
+    html.tailwind-fallback .fixed { position: fixed; }
+    html.tailwind-fallback .sticky { position: sticky; }
+    html.tailwind-fallback .items-center { align-items: center; }
+    html.tailwind-fallback .items-start { align-items: flex-start; }
+    html.tailwind-fallback .items-end { align-items: flex-end; }
+    html.tailwind-fallback .justify-center { justify-content: center; }
+    html.tailwind-fallback .justify-between { justify-content: space-between; }
+    html.tailwind-fallback .justify-end { justify-content: flex-end; }
+    html.tailwind-fallback .flex-col { flex-direction: column; }
+    html.tailwind-fallback .flex-wrap { flex-wrap: wrap; }
+    html.tailwind-fallback .flex-1 { flex: 1 1 0%; }
+    html.tailwind-fallback .w-full { width: 100%; }
+    html.tailwind-fallback .h-full { height: 100%; }
+    html.tailwind-fallback .overflow-x-auto { overflow-x: auto; }
+    html.tailwind-fallback .overflow-hidden { overflow: hidden; }
+    html.tailwind-fallback .text-center { text-align: center; }
+    html.tailwind-fallback .text-right { text-align: right; }
+    html.tailwind-fallback .font-bold, html.tailwind-fallback .font-extrabold, html.tailwind-fallback .font-semibold { font-weight: 700; }
+    html.tailwind-fallback button { font: inherit; cursor: pointer; border: 0; background: transparent; color: inherit; }
+    html.tailwind-fallback input, html.tailwind-fallback select { font: inherit; color: inherit; max-width: 100%; }
+    html.tailwind-fallback canvas { max-width: 100%; }
+    html.tailwind-fallback table { border-collapse: collapse; }
+    html.tailwind-fallback th, html.tailwind-fallback td { padding: .45rem; }
+    html.tailwind-fallback .glass-card, html.tailwind-fallback .glass-card-subtle, html.tailwind-fallback .glass-pill { border-radius: 14px; margin-bottom: 12px; }
+    html.tailwind-fallback .glass-card { padding: 16px; }
+    html.tailwind-fallback .region-matrix-shell { max-width: 100%; overflow: auto; }
+    html.tailwind-fallback .region-weather-table { min-width: max-content; }
+    html.tailwind-fallback .region-weather-table th, html.tailwind-fallback .region-weather-table td { padding: 7px 6px; }
+    html.tailwind-fallback .region-range-btn, html.tailwind-fallback .region-metric-btn { border: 1px solid rgba(255,255,255,.22); padding: 7px 10px; border-radius: 9px; }
+    html.tailwind-fallback .region-range-btn.active { background: #fff; color: #0f172a; }
+    html.tailwind-fallback .region-metric-btn.active-max { background: #f59e0b; color: #1c1917; }
+    html.tailwind-fallback .region-metric-btn.active-min { background: #0ea5e9; color: #082f49; }
+    html.fa-fallback i[class*="fa-"] { display: inline-block; min-width: .8em; }
+    html.fa-fallback i[class*="fa-"]::before { content: "•"; }
+    html.echarts-fallback #chinaEchartsContainer, html.echarts-fallback #archiveEchartsContainer { position: relative; }
+    html.echarts-fallback #chinaEchartsContainer::before, html.echarts-fallback #archiveEchartsContainer::before {
+      content: "地图引擎暂不可用（外部资源未加载）。天气矩阵、筛选和逐日详情仍可使用。";
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      min-height: 200px; width: 100%; height: 100%; padding: 24px; color: #334155;
+      font: 600 14px/1.7 system-ui, sans-serif;
+    }
+
   </style>
 </head>
 <body id="appBody" class="min-h-screen text-white font-sans antialiased theme-sunny transition-colors duration-700 relative overflow-x-hidden selection:bg-amber-400 selection:text-slate-900">
@@ -451,6 +618,104 @@
 
         <div id="fifteenDaysListContainer" class="divide-y divide-white/10">
           <!-- 动态注入卡片列表 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 新增：全国七大区域未来天气矩阵与地区走势分析 -->
+    <section id="regionalForecastSection" class="glass-card rounded-3xl p-5 sm:p-7 space-y-5 relative">
+      <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-cyan-400/15 text-cyan-300 flex items-center justify-center text-base"><i class="fa-solid fa-table-cells-large"></i></div>
+            <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">全国七大区域未来天气矩阵</h2>
+          </div>
+          <p class="text-xs sm:text-sm text-white/65 mt-2">区域大类 → 省份/地区小类 · 联动上方未来 <span id="regionMatrixRangeText" class="text-amber-300 font-extrabold">15</span> 天周期 · 点击省份查看逐日天气明细与走势</p>
+        </div>
+        <div class="flex flex-col gap-2 self-start xl:self-auto">
+          <div class="flex items-center justify-end gap-2">
+            <span class="text-xs font-bold text-white/60">预报周期</span>
+            <div class="glass-pill p-1 rounded-xl flex items-center gap-1">
+              <button id="regionRange7Btn" class="region-range-btn" type="button">7 天</button>
+              <button id="regionRange15Btn" class="region-range-btn active" type="button">15 天</button>
+              <button id="regionRange30Btn" class="region-range-btn" type="button">30 天</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-2">
+            <span class="text-xs font-bold text-white/60">温度维度</span>
+            <div class="glass-pill p-1 rounded-xl flex items-center gap-1">
+              <button id="regionMetricMaxBtn" class="region-metric-btn active-max" type="button"><i class="fa-solid fa-temperature-high mr-1"></i>日最高温</button>
+              <button id="regionMetricMinBtn" class="region-metric-btn" type="button"><i class="fa-solid fa-temperature-low mr-1"></i>日最低温</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 text-[11px] text-white/60">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span><i class="fa-solid fa-sun text-amber-300 mr-1"></i>晴 / 晴间多云</span>
+          <span><i class="fa-solid fa-cloud text-slate-200 mr-1"></i>多云 / 阴</span>
+          <span><i class="fa-solid fa-cloud-rain text-sky-300 mr-1"></i>雨</span>
+          <span><i class="fa-solid fa-snowflake text-cyan-200 mr-1"></i>雪</span>
+          <span class="text-white/35">悬停单元格可查看最高/最低温、降水概率与数据来源提示</span>
+        </div>
+        <span id="regionMatrixLoadStatus" class="text-cyan-200"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i>正在准备各省天气数据…</span>
+      </div>
+
+      <div class="region-matrix-actions">
+        <div class="rule-note">均温汇总 = 所选周期内每日（最高温 + 最低温）÷ 2 的平均值；逐日单元格随最高温 / 最低温维度切换。</div>
+        <div class="flex items-center gap-2">
+          <button id="regionExpandAllBtn" type="button" class="region-expand-all-btn" aria-label="展开全部区域">＋ 全部展开</button>
+          <button id="regionCollapseAllBtn" type="button" class="region-expand-all-btn" aria-label="折叠全部区域">－ 全部折叠</button>
+        </div>
+      </div>
+
+      <div id="regionMatrixNotice" class="rounded-xl border border-sky-300/20 bg-sky-300/5 px-3.5 py-2.5 text-[11px] leading-relaxed text-white/65">
+        未来 30 天矩阵会尽可能展示长周期趋势；天气服务逐日预报覆盖范围以接口实时返回为准，超出部分将明确标记为趋势估算，请以临近预报为准。
+      </div>
+
+      <div class="region-matrix-shell">
+        <table class="region-weather-table" id="regionWeatherMatrix">
+          <thead id="regionWeatherMatrixHead"></thead>
+          <tbody id="regionWeatherMatrixBody"><tr><td colspan="18" class="py-8 text-center text-xs text-white/55">正在载入全国省级天气数据…</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="border-t border-white/10 pt-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          <div>
+            <h3 id="regionTrendTitle" class="text-lg font-extrabold text-white">【西北区 / 陕西】未来 15 天日最高温走势</h3>
+            <p id="regionTrendSubtitle" class="text-[11px] text-white/55 mt-1">省会/地区代表点逐日天气数据 · 点击上方矩阵行可切换地区</p>
+          </div>
+          <span id="regionTrendSourceBadge" class="text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-white/60 self-start">等待数据</span>
+        </div>
+
+        <div id="regionSelectedStats" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="region-stat-card"><div class="region-stat-label">周期均温</div><div class="region-stat-value">—</div></div>
+          <div class="region-stat-card"><div class="region-stat-label">周期最高温</div><div class="region-stat-value">—</div></div>
+          <div class="region-stat-card"><div class="region-stat-label">周期最低温</div><div class="region-stat-value">—</div></div>
+          <div class="region-stat-card"><div class="region-stat-label">雨雪天数</div><div class="region-stat-value">—</div></div>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-slate-950/10 p-3 sm:p-4">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <h4 id="regionTrendChartCaption" class="text-xs font-bold text-white/75">逐日温度走势</h4>
+            <span class="text-[10px] text-white/45">单位：<span class="chartUnitLabel">°C</span></span>
+          </div>
+          <div class="relative h-64 sm:h-72"><canvas id="regionTrendChart"></canvas></div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <h4 class="text-sm font-extrabold">所选地区逐日天气明细</h4>
+            <span class="text-[10px] text-white/45">最高温 / 最低温 / 天气状况 / 降水概率</span>
+          </div>
+          <div class="overflow-x-auto rounded-xl border border-white/10">
+            <table class="region-day-detail-table">
+              <thead><tr><th>日期 / 星期</th><th>天气状况</th><th>日最高温</th><th>日最低温</th><th>降水概率</th><th>数据标记</th></tr></thead>
+              <tbody id="regionDailyDetailBody"><tr><td colspan="6" class="text-center text-white/45 py-6">选择地区后展示逐日明细</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -1085,6 +1350,122 @@
   </div>
 
   <script>
+    /* Chart.js 加载失败时使用原生 Canvas 降级图表，保证矩阵和筛选交互不被中断。 */
+    (function installNativeChartFallback() {
+      if (typeof window.Chart !== 'undefined') return;
+      class NativeCanvasChart {
+        constructor(contextOrCanvas, config) {
+          this.ctx = contextOrCanvas && typeof contextOrCanvas.getContext === 'function'
+            ? contextOrCanvas.getContext('2d') : contextOrCanvas;
+          this.canvas = this.ctx && this.ctx.canvas ? this.ctx.canvas : null;
+          this.config = config || {};
+          this._destroyed = false;
+          this._resizeHandler = () => this.render();
+          if (window.addEventListener) window.addEventListener('resize', this._resizeHandler);
+          this.render();
+        }
+        destroy() {
+          this._destroyed = true;
+          if (window.removeEventListener) window.removeEventListener('resize', this._resizeHandler);
+          if (this.ctx && this.canvas) this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        update() { this.render(); }
+        resize() { this.render(); }
+        render() {
+          if (this._destroyed || !this.ctx || !this.canvas) return;
+          const ctx = this.ctx, canvas = this.canvas, cfg = this.config || {};
+          const rect = canvas.getBoundingClientRect ? canvas.getBoundingClientRect() : null;
+          const dpr = Math.max(1, Math.min(2, Number(window.devicePixelRatio) || 1));
+          const width = Math.max(240, Math.round((rect && rect.width) || canvas.clientWidth || 600));
+          const height = Math.max(160, Math.round((rect && rect.height) || canvas.clientHeight || 260));
+          if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
+            canvas.width = Math.round(width * dpr);
+            canvas.height = Math.round(height * dpr);
+          }
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          ctx.clearRect(0, 0, width, height);
+          const data = cfg.data || {}, labels = Array.isArray(data.labels) ? data.labels : [];
+          const datasets = Array.isArray(data.datasets) ? data.datasets : [];
+          const values = [];
+          datasets.forEach(ds => (Array.isArray(ds.data) ? ds.data : []).forEach(v => {
+            const n = typeof v === 'number' ? v : (v == null ? NaN : Number(v));
+            if (Number.isFinite(n)) values.push(n);
+          }));
+          ctx.font = '11px system-ui, -apple-system, sans-serif';
+          ctx.fillStyle = 'rgba(255,255,255,.62)';
+          ctx.strokeStyle = 'rgba(255,255,255,.12)';
+          const left = 38, right = 12, top = 16, bottom = 30;
+          const plotW = Math.max(20, width - left - right), plotH = Math.max(20, height - top - bottom);
+          if (!values.length) {
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('暂无可绘制的数据', width / 2, height / 2);
+            return;
+          }
+          let min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+          if (min === max) { min -= 1; max += 1; }
+          const pad = (max - min) * .12; min -= pad; max += pad;
+          const y = v => top + (max - v) / (max - min) * plotH;
+          const stepX = labels.length > 1 ? plotW / (labels.length - 1) : plotW / 2;
+          for (let i = 0; i <= 4; i++) {
+            const yy = top + plotH * i / 4;
+            ctx.beginPath(); ctx.moveTo(left, yy); ctx.lineTo(width - right, yy); ctx.stroke();
+            ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+            ctx.fillText(String(Math.round(max - (max - min) * i / 4)), left - 7, yy);
+          }
+          const maxTicks = Math.min(labels.length, labels.length > 22 ? 8 : (labels.length > 14 ? 10 : 15));
+          for (let i = 0; i < maxTicks; i++) {
+            const index = maxTicks === 1 ? 0 : Math.round(i * (labels.length - 1) / (maxTicks - 1));
+            const xx = labels.length > 1 ? left + index * stepX : left + plotW / 2;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            const raw = String(labels[index] == null ? '' : labels[index]);
+            ctx.fillText(raw.length > 9 ? raw.slice(0, 9) : raw, xx, top + plotH + 7);
+          }
+          const band = plotW / Math.max(labels.length, 1);
+          datasets.forEach(ds => {
+            const arr = Array.isArray(ds.data) ? ds.data : [];
+            const color = typeof ds.borderColor === 'string' ? ds.borderColor : '#38bdf8';
+            const isBar = ds.type === 'bar' || cfg.type === 'bar';
+            ctx.strokeStyle = color;
+            ctx.fillStyle = (typeof ds.backgroundColor === 'string') ? ds.backgroundColor : color;
+            ctx.lineWidth = Math.max(1, Number(ds.borderWidth) || 2);
+            if (isBar) {
+              arr.forEach((v, i) => {
+                const n = v == null ? NaN : Number(v); if (!Number.isFinite(n)) return;
+                const xx = left + (labels.length === 1 ? plotW / 2 : i * stepX);
+                const yy = y(n); const bw = Math.max(2, Math.min(18, band * .55));
+                ctx.globalAlpha = .7; ctx.fillRect(xx - bw / 2, yy, bw, Math.max(1, top + plotH - yy)); ctx.globalAlpha = 1;
+              });
+              return;
+            }
+            ctx.beginPath(); let started = false;
+            arr.forEach((v, i) => {
+              const n = v == null ? NaN : Number(v); if (!Number.isFinite(n)) { started = false; return; }
+              const xx = left + (labels.length === 1 ? plotW / 2 : i * stepX), yy = y(n);
+              if (!started) { ctx.moveTo(xx, yy); started = true; } else ctx.lineTo(xx, yy);
+            });
+            ctx.stroke();
+            arr.forEach((v, i) => {
+              const n = v == null ? NaN : Number(v); if (!Number.isFinite(n)) return;
+              const xx = left + (labels.length === 1 ? plotW / 2 : i * stepX), yy = y(n);
+              ctx.beginPath(); ctx.arc(xx, yy, labels.length > 20 ? 1.8 : 2.8, 0, Math.PI * 2);
+              ctx.fillStyle = color; ctx.fill();
+            });
+          });
+          const showLegend = !(cfg.options && cfg.options.plugins && cfg.options.plugins.legend && cfg.options.plugins.legend.display === false);
+          if (showLegend && datasets.length > 1) {
+            let x = left;
+            datasets.forEach(ds => {
+              const color = typeof ds.borderColor === 'string' ? ds.borderColor : '#38bdf8';
+              ctx.fillStyle = color; ctx.fillRect(x, 2, 9, 9);
+              ctx.fillStyle = 'rgba(255,255,255,.72)'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+              const label = String(ds.label || '数据'); ctx.fillText(label, x + 13, 0); x += Math.min(130, ctx.measureText(label).width + 28);
+            });
+          }
+        }
+      }
+      window.Chart = NativeCanvasChart;
+    })();
+
     // 全局状态管理
     const state = {
       unit: 'C', // 'C' 或 'F'
@@ -1099,6 +1480,14 @@
       trendChartInstance: null,
       isLoading: false,
       heatmapMode: 'max', // 'max' 最高气温模式, 'min' 最低气温模式
+      regionMetric: 'max', // 全国区域天气矩阵温度维度：max / min
+      regionSelectedProvince: '陕西',
+      regionCollapsedGroups: {}, // 各区域独立展开/折叠状态；默认全部展开
+      regionForecastCache: {},
+      regionForecastLoading: false,
+      regionForecastRequested: false,
+      regionForecastLoadedCount: 0,
+      regionTrendChartInstance: null,
       currentUser: null,  // 当前登录账号
       isLoggedIn: false,  // 登录状态标识
       historicalData: null,
@@ -2552,6 +2941,422 @@
         setLoading(false);
         renderAllWeatherViews();
       }
+    }
+
+    // 七大区域分组：区域为大类，省份/地区为小类（坐标沿用页面现有省级基准库）
+    const REGIONAL_FORECAST_GROUPS = [
+      { name: '华北区', provinces: ['北京', '天津', '河北', '山西', '内蒙古'] },
+      { name: '东北区', provinces: ['辽宁', '吉林', '黑龙江'] },
+      { name: '华东区', provinces: ['上海', '江苏', '浙江', '安徽', '福建', '江西', '山东'] },
+      { name: '华中区', provinces: ['河南', '湖北', '湖南'] },
+      { name: '华南区', provinces: ['广东', '广西', '海南', '香港', '澳门', '台湾', '南海诸岛'] },
+      { name: '西南区', provinces: ['重庆', '四川', '贵州', '云南', '西藏'] },
+      { name: '西北区', provinces: ['陕西', '甘肃', '青海', '宁夏', '新疆'] }
+    ];
+
+    function regionalForecastDateLabel(dateStr) {
+      const parts = String(dateStr || '').split('-');
+      return parts.length >= 3 ? `${Number(parts[1])}/${Number(parts[2])}` : String(dateStr || '');
+    }
+
+    function regionalWeatherCategory(code) {
+      if (code >= 95) return '雷';
+      if ((code >= 71 && code <= 77) || code === 85 || code === 86) return '雪';
+      if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return '雨';
+      if (code === 0 || code === 1) return '晴';
+      if (code === 2 || code === 3 || code === 45 || code === 48) return '多云';
+      return '其他';
+    }
+
+    function regionalWeatherIcon(code) {
+      const info = parseWeatherCode(code, 1);
+      return `<i class="fa-solid ${info.icon} weather-icon"></i>`;
+    }
+
+    function makeRegionalDateParts(dateStr, index) {
+      let d;
+      if (dateStr) {
+        const parts = dateStr.split('-').map(Number);
+        d = new Date(parts[0], parts[1] - 1, parts[2]);
+      } else {
+        d = new Date();
+        d.setDate(d.getDate() + index);
+      }
+      return {
+        dateObj: d,
+        dateStr: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,
+        shortDate: `${d.getMonth()+1}/${d.getDate()}`,
+        weekday: ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()]
+      };
+    }
+
+    function createExtendedRegionalDaily(realDays, province) {
+      const daily = realDays.slice();
+      if (!daily.length) return daily;
+      const tail = daily.slice(-7);
+      const avgMax = tail.reduce((sum, d) => sum + d.maxTemp, 0) / tail.length;
+      const avgMin = tail.reduce((sum, d) => sum + d.minTemp, 0) / tail.length;
+      const last = daily[daily.length - 1];
+      for (let i = daily.length; i < 30; i++) {
+        const date = makeRegionalDateParts(null, i);
+        const wave = Math.round(Math.sin((i - 15) * 0.67) * 2.2 + Math.cos((i - 15) * 0.31) * 0.8);
+        const pattern = tail[(i - daily.length) % tail.length] || last;
+        const maxTemp = Math.round(avgMax + wave);
+        const minTemp = Math.min(maxTemp, Math.round(avgMin + wave * 0.8));
+        daily.push({
+          date: date.dateStr,
+          dateStr: date.shortDate,
+          weekday: date.weekday,
+          maxTemp,
+          minTemp,
+          weatherCode: pattern.weatherCode,
+          precipitationProb: pattern.precipitationProb,
+          estimated: true
+        });
+      }
+      return daily;
+    }
+
+    async function fetchRegionalForecastForProvince(province) {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${province.lat}&longitude=${province.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=16`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`天气接口请求失败 (${response.status})`);
+      const data = await response.json();
+      if (!data.daily || !Array.isArray(data.daily.time)) throw new Error('天气接口未返回逐日数据');
+      const daily = data.daily.time.map((dateStr, i) => {
+        const parts = makeRegionalDateParts(dateStr, i);
+        const maxTemp = Number(data.daily.temperature_2m_max?.[i]);
+        const minTemp = Number(data.daily.temperature_2m_min?.[i]);
+        return {
+          date: parts.dateStr,
+          dateStr: parts.shortDate,
+          weekday: parts.weekday,
+          maxTemp: Number.isFinite(maxTemp) ? Math.round(maxTemp) : null,
+          minTemp: Number.isFinite(minTemp) ? Math.round(minTemp) : null,
+          weatherCode: Number(data.daily.weather_code?.[i] ?? 3),
+          precipitationProb: Number.isFinite(Number(data.daily.precipitation_probability_max?.[i])) ? Math.round(Number(data.daily.precipitation_probability_max[i])) : 0,
+          estimated: false
+        };
+      });
+      return { daily: createExtendedRegionalDaily(daily, province), source: 'Open-Meteo 逐日预报', failed: false };
+    }
+
+    async function loadRegionalForecastData(forceRefresh = false) {
+      if (state.regionForecastLoading) return;
+      if (state.regionForecastRequested && !forceRefresh) {
+        renderRegionForecastMatrix();
+        return;
+      }
+      state.regionForecastRequested = true;
+      state.regionForecastLoading = true;
+      state.regionForecastLoadedCount = 0;
+      const allNames = REGIONAL_FORECAST_GROUPS.flatMap(group => group.provinces);
+      const uniqueNames = [...new Set(allNames)];
+      const status = document.getElementById('regionMatrixLoadStatus');
+      if (status) status.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin mr-1"></i>正在获取 ${uniqueNames.length} 个省级地区预报…`;
+
+      // 分批请求，避免同时发起过多外部天气接口请求
+      try {
+        for (let start = 0; start < uniqueNames.length; start += 5) {
+          const batchNames = uniqueNames.slice(start, start + 5);
+          await Promise.all(batchNames.map(async name => {
+            const province = CHINA_PROVINCES.find(p => p.name === name);
+            if (!province) {
+              state.regionForecastCache[name] = { daily: [], source: '暂无坐标', failed: true };
+              return;
+            }
+            if (!forceRefresh && state.regionForecastCache[name]?.daily?.length) return;
+            try {
+              state.regionForecastCache[name] = await fetchRegionalForecastForProvince(province);
+            } catch (error) {
+              console.warn(`区域天气获取失败：${name}`, error);
+              state.regionForecastCache[name] = { daily: [], source: '暂时无法连接天气接口', failed: true, error: error.message };
+            }
+            state.regionForecastLoadedCount++;
+          }));
+          renderRegionForecastMatrix();
+        }
+      } finally {
+        state.regionForecastLoading = false;
+        const complete = uniqueNames.filter(name => state.regionForecastCache[name]?.daily?.length).length;
+        if (status) {
+          status.innerHTML = complete === uniqueNames.length
+            ? `<i class="fa-solid fa-circle-check text-emerald-300 mr-1"></i>已载入 ${complete}/${uniqueNames.length} 个地区`
+            : `<i class="fa-solid fa-triangle-exclamation text-amber-300 mr-1"></i>已载入 ${complete}/${uniqueNames.length} 个地区，部分数据暂不可用`;
+        }
+        renderRegionForecastMatrix();
+      }
+    }
+
+    function getRegionalMatrixDays() {
+      const selected = state.regionSelectedProvince;
+      const selectedData = state.regionForecastCache[selected]?.daily || [];
+      const anyData = selectedData.length ? selectedData : Object.values(state.regionForecastCache).find(x => x?.daily?.length)?.daily || [];
+      if (anyData.length) return anyData.slice(0, state.currentRange);
+      return Array.from({ length: state.currentRange }, (_, i) => {
+        const p = makeRegionalDateParts(null, i);
+        return { date: p.dateStr, dateStr: p.shortDate, weekday: p.weekday, estimated: false };
+      });
+    }
+
+    function formatRegionalMeanTemperature(celsiusValue) {
+      if (!Number.isFinite(celsiusValue)) return '—';
+      const value = state.unit === 'F' ? celsiusValue * 1.8 + 32 : celsiusValue;
+      return `${value.toFixed(1)}°${state.unit}`;
+    }
+
+    // 均温口径：先计算每一天的（最高温 + 最低温）/ 2，再对所选周期求平均。
+    function getRegionalPeriodMean(daily) {
+      const means = (daily || [])
+        .map(day => Number.isFinite(day?.maxTemp) && Number.isFinite(day?.minTemp) ? (day.maxTemp + day.minTemp) / 2 : null)
+        .filter(Number.isFinite);
+      return means.length ? means.reduce((sum, value) => sum + value, 0) / means.length : null;
+    }
+
+    function getRegionalGroupDailyAverage(group, dayIndex, metric) {
+      const field = metric === 'max' ? 'maxTemp' : 'minTemp';
+      const items = group.provinces
+        .map(name => ({ name, day: state.regionForecastCache[name]?.daily?.[dayIndex] }))
+        .filter(item => Number.isFinite(item.day?.[field]));
+      if (!items.length) return null;
+      const value = items.reduce((sum, item) => sum + item.day[field], 0) / items.length;
+      const categoryCounts = {};
+      items.forEach(item => {
+        const category = regionalWeatherCategory(item.day.weatherCode);
+        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+      });
+      const dominantCategory = Object.keys(categoryCounts).sort((a, b) => categoryCounts[b] - categoryCounts[a])[0] || '多云';
+      const dominantItem = items.find(item => regionalWeatherCategory(item.day.weatherCode) === dominantCategory);
+      return { value, count: items.length, total: group.provinces.length, weatherCode: dominantItem?.day?.weatherCode ?? 3, dominantCategory };
+    }
+
+    function renderRegionForecastMatrix() {
+      const head = document.getElementById('regionWeatherMatrixHead');
+      const body = document.getElementById('regionWeatherMatrixBody');
+      if (!head || !body) return;
+      const days = getRegionalMatrixDays();
+      const metric = state.regionMetric;
+      const metricName = metric === 'max' ? '日最高温' : '日最低温';
+      // 浅色矩阵需要深色文字，保持高对比度。
+      const metricColor = metric === 'max' ? '#c2410c' : '#0369a1';
+      const rangeEl = document.getElementById('regionMatrixRangeText');
+      if (rangeEl) rangeEl.textContent = state.currentRange;
+      [7, 15, 30].forEach(daysCount => {
+        const rangeButton = document.getElementById(`regionRange${daysCount}Btn`);
+        if (rangeButton) rangeButton.className = `region-range-btn ${state.currentRange === daysCount ? 'active' : ''}`;
+      });
+      const maxBtn = document.getElementById('regionMetricMaxBtn');
+      const minBtn = document.getElementById('regionMetricMinBtn');
+      if (maxBtn) maxBtn.className = `region-metric-btn ${metric === 'max' ? 'active-max' : ''}`;
+      if (minBtn) minBtn.className = `region-metric-btn ${metric === 'min' ? 'active-min' : ''}`;
+
+      const dateHeaders = days.map(day => {
+        const dateText = day.date || '';
+        const d = dateText ? new Date(`${dateText}T00:00:00`) : new Date();
+        const dateLabel = day.dateStr || `${d.getMonth()+1}/${d.getDate()}`;
+        return `<th title="${dateText}"><span>${dateLabel}</span><span class="day-of-week">${day.weekday || ''}</span></th>`;
+      }).join('');
+      head.innerHTML = `<tr><th class="region-sticky">区域大类</th><th class="province-sticky">省份 / 地区小类</th><th class="period-mean-cell">周期均温</th>${dateHeaders}</tr>`;
+
+      const html = [];
+      REGIONAL_FORECAST_GROUPS.forEach((group, groupIndex) => {
+        const collapsed = state.regionCollapsedGroups[group.name] === true;
+        const regionDaysForMean = [];
+        group.provinces.forEach(provinceName => {
+          const daily = state.regionForecastCache[provinceName]?.daily || [];
+          daily.slice(0, state.currentRange).forEach(day => regionDaysForMean.push(day));
+        });
+        const regionMean = getRegionalPeriodMean(regionDaysForMean);
+        const toggleIcon = collapsed ? '+' : '−';
+        html.push(`<tr class="region-summary-row" data-region-summary="${group.name}">`);
+        html.push(`<td class="region-sticky region-name-cell"><button type="button" class="region-toggle-button" data-toggle-region="${group.name}" aria-expanded="${!collapsed}" aria-label="${collapsed ? '展开' : '折叠'}${group.name}"><span class="region-toggle-icon" aria-hidden="true">${toggleIcon}</span><span>${group.name}</span></button><span class="region-count">${group.provinces.length} 个地区 · ${collapsed ? '已折叠' : '已展开'}</span></td>`);
+        html.push(`<td class="province-sticky">区域${metricName}均值</td>`);
+        html.push(`<td class="period-mean-cell" title="${group.name}所选周期均温，按每日（最高温+最低温）/2计算；周期内超出接口预报范围的日期为趋势估算">${formatRegionalMeanTemperature(regionMean)}</td>`);
+        for (let i = 0; i < state.currentRange; i++) {
+          const aggregate = getRegionalGroupDailyAverage(group, i, metric);
+          if (!aggregate) {
+            html.push(`<td class="weather-cell" title="${group.name} ${days[i]?.date || ''}暂无可用数据"><span class="weather-temp" style="color:${metricColor}">—</span><span class="weather-caption">暂无数据</span></td>`);
+            continue;
+          }
+          const shownTemp = formatRegionalMeanTemperature(aggregate.value);
+          const title = `【${group.name}区域汇总】${days[i]?.date || ''} ${metricName}均值 ${shownTemp} · 天气代表类型：${aggregate.dominantCategory} · 有数据 ${aggregate.count}/${aggregate.total} 个地区`;
+          html.push(`<td class="weather-cell" title="${title}"><span class="weather-temp" style="color:${metricColor}">${shownTemp}</span><span class="weather-caption">区域均值 ${aggregate.count}/${aggregate.total}</span></td>`);
+        }
+        html.push('</tr>');
+
+        if (collapsed) return;
+        group.provinces.forEach(provinceName => {
+          const forecast = state.regionForecastCache[provinceName];
+          const daily = forecast?.daily || [];
+          const isSelected = state.regionSelectedProvince === provinceName;
+          html.push(`<tr class="${isSelected ? 'region-selected' : ''}" data-region-row="${provinceName}" data-parent-region="${group.name}">`);
+          html.push(`<td class="region-sticky region-child-gutter" aria-hidden="true"></td>`);
+          const province = CHINA_PROVINCES.find(p => p.name === provinceName);
+          html.push(`<td class="province-sticky"><button type="button" class="province-name-button" data-select-region-province="${provinceName}" title="查看【${group.name} / ${provinceName}】逐日明细与走势"><span>${provinceName}<small class="block mt-0.5">${province?.capital || '代表点'}</small></span><span aria-hidden="true" style="color:#64748b">›</span></button></td>`);
+          html.push(`<td class="period-mean-cell" title="${provinceName}所选周期均温，按每日（最高温+最低温）/2计算；周期内超出接口预报范围的日期为趋势估算">${formatRegionalMeanTemperature(getRegionalPeriodMean(daily.slice(0, state.currentRange)))}</td>`);
+          for (let i = 0; i < state.currentRange; i++) {
+            const day = daily[i];
+            if (!day || !Number.isFinite(day[metric === 'max' ? 'maxTemp' : 'minTemp'])) {
+              html.push(`<td class="weather-cell" title="${provinceName}天气数据暂不可用"><span class="weather-temp" style="color:#64748b">—</span><span class="weather-caption">暂无数据</span></td>`);
+              continue;
+            }
+            const temp = metric === 'max' ? day.maxTemp : day.minTemp;
+            const info = parseWeatherCode(day.weatherCode, 1);
+            const estimateTag = day.estimated ? '（趋势估算）' : '（接口逐日预报）';
+            const title = `【${group.name} / ${provinceName}】${day.date} ${metricName} ${temp}°C · 天气：${info.text} · 最高温 ${day.maxTemp}°C · 最低温 ${day.minTemp}°C · 降水概率 ${day.precipitationProb}% ${estimateTag}`;
+            const cellClass = day.estimated ? 'estimated-weather-cell' : '';
+            html.push(`<td class="weather-cell ${cellClass}" title="${title}">${regionalWeatherIcon(day.weatherCode)}<span class="weather-temp" style="color:${metricColor}">${convertTemp(temp)}°${state.unit}</span><span class="weather-caption">${info.text}${day.estimated ? ' · 推演' : ''}</span></td>`);
+          }
+          html.push('</tr>');
+        });
+      });
+      body.innerHTML = html.join('');
+
+      body.querySelectorAll('[data-select-region-province]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.regionSelectedProvince = button.getAttribute('data-select-region-province');
+          renderRegionForecastMatrix();
+        });
+      });
+      body.querySelectorAll('[data-toggle-region]').forEach(button => {
+        button.addEventListener('click', () => {
+          const groupName = button.getAttribute('data-toggle-region');
+          state.regionCollapsedGroups[groupName] = state.regionCollapsedGroups[groupName] !== true;
+          renderRegionForecastMatrix();
+        });
+      });
+      renderRegionalTrendDetail();
+    }
+
+    function renderRegionalTrendDetail(forceGroupName = null, forceProvinceName = null) {
+      const provinceName = forceProvinceName || state.regionSelectedProvince;
+      const group = REGIONAL_FORECAST_GROUPS.find(g => g.provinces.includes(provinceName));
+      const groupName = forceGroupName || group?.name || '区域';
+      const forecast = state.regionForecastCache[provinceName];
+      const daily = (forecast?.daily || []).slice(0, state.currentRange);
+      const metric = state.regionMetric;
+      const metricName = metric === 'max' ? '日最高温' : '日最低温';
+      const title = document.getElementById('regionTrendTitle');
+      if (title) title.textContent = `【${groupName} / ${provinceName}】未来 ${state.currentRange} 天${metricName}走势`;
+      const subtitle = document.getElementById('regionTrendSubtitle');
+      if (subtitle) subtitle.textContent = `${provinceName}（省会/地区代表点）逐日天气数据 · 已同步矩阵周期与温度维度`;
+      const caption = document.getElementById('regionTrendChartCaption');
+      if (caption) caption.textContent = `${provinceName}未来 ${state.currentRange} 天${metricName}走势趋势图`;
+      const sourceBadge = document.getElementById('regionTrendSourceBadge');
+      if (sourceBadge) {
+        const estimatedCount = daily.filter(d => d.estimated).length;
+        sourceBadge.textContent = forecast?.failed ? '数据获取失败' : (forecast?.daily?.length ? (estimatedCount ? `接口预报 + ${estimatedCount} 天趋势估算` : '接口逐日预报') : '等待数据');
+      }
+
+      const stats = document.getElementById('regionSelectedStats');
+      if (stats) {
+        if (!daily.length) {
+          stats.innerHTML = ['周期均温','周期最高温','周期最低温','雨雪天数'].map(label => `<div class="region-stat-card"><div class="region-stat-label">${label}</div><div class="region-stat-value">—</div></div>`).join('');
+        } else {
+          const vals = daily.map(d => metric === 'max' ? d.maxTemp : d.minTemp).filter(Number.isFinite);
+          const avg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+          const maxTemp = Math.max(...daily.map(d => d.maxTemp).filter(Number.isFinite));
+          const minTemp = Math.min(...daily.map(d => d.minTemp).filter(Number.isFinite));
+          const rainySnowy = daily.filter(d => ['雨','雪','雷'].includes(regionalWeatherCategory(d.weatherCode))).length;
+          const cards = [
+            ['周期均温', avg == null ? '—' : `${convertTemp(avg)}°${state.unit}`],
+            ['周期最高温', Number.isFinite(maxTemp) ? `${convertTemp(maxTemp)}°${state.unit}` : '—'],
+            ['周期最低温', Number.isFinite(minTemp) ? `${convertTemp(minTemp)}°${state.unit}` : '—'],
+            ['雨雪天数', `${rainySnowy} 天`]
+          ];
+          stats.innerHTML = cards.map(([label,value],i) => `<div class="region-stat-card"><div class="region-stat-label">${label}</div><div class="region-stat-value" style="${i===0 ? `color:${metric==='max'?'#fbbf24':'#7dd3fc'}` : ''}">${value}</div></div>`).join('');
+        }
+      }
+
+      const canvas = document.getElementById('regionTrendChart');
+      if (canvas && typeof Chart !== 'undefined') {
+        if (state.regionTrendChartInstance) state.regionTrendChartInstance.destroy();
+        if (daily.length) {
+          const ctx = canvas.getContext('2d');
+          const lineColor = metric === 'max' ? '#fbbf24' : '#7dd3fc';
+          const fill = ctx.createLinearGradient(0,0,0,260);
+          fill.addColorStop(0, metric === 'max' ? 'rgba(245,158,11,.28)' : 'rgba(14,165,233,.28)');
+          fill.addColorStop(1, metric === 'max' ? 'rgba(245,158,11,0)' : 'rgba(14,165,233,0)');
+          state.regionTrendChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: daily.map(d => `${d.dateStr} ${d.weekday}`),
+              datasets: [{
+                label: metricName,
+                data: daily.map(d => convertTemp(metric === 'max' ? d.maxTemp : d.minTemp)),
+                borderColor: lineColor,
+                backgroundColor: fill,
+                borderWidth: 2.5,
+                pointRadius: state.currentRange > 15 ? 2 : 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: lineColor,
+                fill: true,
+                tension: .32,
+                spanGaps: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: { mode: 'index', intersect: false },
+              plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: context => `${metricName}：${context.parsed.y}°${state.unit}` } }
+              },
+              scales: {
+                x: { ticks: { color: 'rgba(255,255,255,.52)', maxTicksLimit: state.currentRange > 15 ? 10 : 15, maxRotation: 0 }, grid: { color: 'rgba(255,255,255,.055)' } },
+                y: { ticks: { color: 'rgba(255,255,255,.52)', callback: value => `${value}°` }, grid: { color: 'rgba(255,255,255,.075)' } }
+              }
+            }
+          });
+        }
+      }
+
+      const detailBody = document.getElementById('regionDailyDetailBody');
+      if (detailBody) {
+        if (!daily.length) {
+          detailBody.innerHTML = `<tr><td colspan="6" class="text-center text-white/45 py-6">${forecast?.error || '正在获取该地区天气数据…'}</td></tr>`;
+        } else {
+          detailBody.innerHTML = daily.map(day => {
+            const info = parseWeatherCode(day.weatherCode, 1);
+            return `<tr><td>${day.date} ${day.weekday}</td><td><span class="inline-flex items-center gap-2">${regionalWeatherIcon(day.weatherCode)}${info.text}</span></td><td style="color:#fbbf24;font-weight:800">${Number.isFinite(day.maxTemp) ? `${convertTemp(day.maxTemp)}°${state.unit}` : '—'}</td><td style="color:#7dd3fc;font-weight:800">${Number.isFinite(day.minTemp) ? `${convertTemp(day.minTemp)}°${state.unit}` : '—'}</td><td>${day.precipitationProb ?? 0}%</td><td class="${day.estimated ? 'text-amber-200/70' : 'text-emerald-200/70'}">${day.estimated ? '长周期趋势估算' : '接口逐日预报'}</td></tr>`;
+          }).join('');
+        }
+      }
+    }
+
+    function setupRegionForecastControls() {
+      [7, 15, 30].forEach(daysCount => {
+        const rangeButton = document.getElementById(`regionRange${daysCount}Btn`);
+        if (rangeButton) rangeButton.addEventListener('click', () => setForecastRange(daysCount));
+      });
+      const expandAllBtn = document.getElementById('regionExpandAllBtn');
+      const collapseAllBtn = document.getElementById('regionCollapseAllBtn');
+      if (expandAllBtn) expandAllBtn.addEventListener('click', () => {
+        state.regionCollapsedGroups = {};
+        renderRegionForecastMatrix();
+        showToast('已展开全部七大区域', 'info');
+      });
+      if (collapseAllBtn) collapseAllBtn.addEventListener('click', () => {
+        state.regionCollapsedGroups = {};
+        REGIONAL_FORECAST_GROUPS.forEach(group => { state.regionCollapsedGroups[group.name] = true; });
+        renderRegionForecastMatrix();
+        showToast('已折叠全部七大区域', 'info');
+      });
+      const maxBtn = document.getElementById('regionMetricMaxBtn');
+      const minBtn = document.getElementById('regionMetricMinBtn');
+      if (maxBtn) maxBtn.addEventListener('click', () => {
+        if (state.regionMetric === 'max') return;
+        state.regionMetric = 'max';
+        renderRegionForecastMatrix();
+        showToast('区域天气矩阵已切换至日最高温', 'info');
+      });
+      if (minBtn) minBtn.addEventListener('click', () => {
+        if (state.regionMetric === 'min') return;
+        state.regionMetric = 'min';
+        renderRegionForecastMatrix();
+        showToast('区域天气矩阵已切换至日最低温', 'info');
+      });
     }
 
     // 渲染实时天气 Hero 卡片
@@ -5791,6 +6596,8 @@
       renderTrendChart();
       renderHistoricalWeatherViews();
       renderLifeIndices();
+      renderRegionForecastMatrix();
+      if (!state.regionForecastRequested) loadRegionalForecastData();
     }
 
     function setForecastRange(days) {
@@ -5820,6 +6627,7 @@
       showToast(`已切换至未来 ${days} 天天气走势`, 'info');
       renderFifteenDaysForecast();
       renderTrendChart();
+      renderRegionForecastMatrix();
     }
 
     const unitCBtn = document.getElementById('unitCBtn');
@@ -6029,10 +6837,20 @@
       setupTemperatureTierControls();
       setupMonthlyArchiveControls();
       setupArchiveMonthlyMapControls();
+      setupRegionForecastControls();
       renderMonthlyArchive();
       setupLoginPortal();
       fetchWeatherData(state.currentCity);
     });
+
+    // 外部图表引擎异常时给出非阻塞提示；不阻断天气矩阵及其他页面操作。
+    window.addEventListener('load', function () {
+      if (document.documentElement.classList.contains('echarts-fallback')) {
+        const status = document.getElementById('mapLoadingText');
+        if (status) status.textContent = '地图引擎暂不可用；可继续使用天气矩阵、筛选和逐日详情。';
+      }
+    });
+
   </script>
 </body>
 </html>
