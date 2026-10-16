@@ -204,6 +204,33 @@
       color: #fff; background: rgba(255,255,255,.12); font-size: 11px; font-weight: 800;
     }
     .region-expand-all-btn:hover { background: rgba(255,255,255,.22); }
+
+    /* 层级合并列 + 省份/地区温度趋势迷你折线图 */
+    .region-weather-table .region-sticky {
+      min-width: 174px; width: 174px; max-width: 174px;
+      white-space: normal; text-align: left;
+    }
+    .region-weather-table .province-sticky {
+      left: 174px; min-width: 122px; width: 122px; max-width: 122px;
+    }
+    .region-weather-table .province-hierarchy-cell { padding-left: 15px; }
+    .region-weather-table .province-hierarchy-cell .province-name-button {
+      display: flex; align-items: center; justify-content: space-between; gap: 6px;
+      width: 100%; text-align: left; white-space: normal; color: #334155; font-size: 11px;
+    }
+    .region-weather-table .province-hierarchy-cell .province-name-button span:first-child { min-width: 0; }
+    .region-weather-table .province-hierarchy-cell .province-name-button small {
+      display: block; margin-top: 2px; color: #64748b; font-size: 9px; font-weight: 500;
+    }
+    .region-weather-table .province-sparkline-cell { background: #fff; padding-left: 5px; padding-right: 5px; }
+    .region-weather-table .region-summary-row .province-sparkline-cell { background: #eaf3ff; }
+    .region-sparkline { display: block; width: 108px; height: 30px; margin: 0 auto; overflow: visible; }
+    .region-sparkline .sparkline-guide { stroke: #dbe4ef; stroke-width: 1; stroke-dasharray: 2 3; }
+    .region-sparkline .sparkline-line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .region-sparkline .sparkline-dot { stroke: #fff; stroke-width: 1.2; }
+    .region-weather-table .sparkline-empty { color: #94a3b8; font-size: 10px; }
+    .region-weather-table tbody tr.region-selected .region-sticky { background: #fff7e6; }
+    .region-weather-table tbody tr.region-selected .province-sticky { background: #fffaf0; box-shadow: inset 2px 0 0 #f59e0b; }
     @media (max-width: 640px) {
       .region-weather-table .region-sticky { min-width: 112px; width: 112px; max-width: 112px; }
       .region-weather-table .province-sticky { left: 112px; min-width: 108px; width: 108px; max-width: 108px; }
@@ -220,6 +247,12 @@
     }
 
 
+
+    @media (max-width: 640px) {
+      .region-weather-table .region-sticky { min-width: 154px; width: 154px; max-width: 154px; }
+      .region-weather-table .province-sticky { left: 154px; min-width: 108px; width: 108px; max-width: 108px; }
+      .region-sparkline { width: 96px; height: 28px; }
+    }
 
     /* CDN 资源加载失败时的跨浏览器基础降级样式；正常加载 Tailwind 时不生效 */
     html.tailwind-fallback body { margin: 0; min-height: 100vh; color: #f8fafc; background: #0f172a; overflow-x: hidden; }
@@ -630,7 +663,7 @@
             <div class="w-9 h-9 rounded-xl bg-cyan-400/15 text-cyan-300 flex items-center justify-center text-base"><i class="fa-solid fa-table-cells-large"></i></div>
             <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">全国七大区域未来天气矩阵</h2>
           </div>
-          <p class="text-xs sm:text-sm text-white/65 mt-2">区域大类 → 省份/地区小类 · 联动上方未来 <span id="regionMatrixRangeText" class="text-amber-300 font-extrabold">15</span> 天周期 · 点击省份查看逐日天气明细与走势</p>
+          <p class="text-xs sm:text-sm text-white/65 mt-2">区域大类与省份/城市层级同列展示；地区行附带温度走势折线 · 联动未来 <span id="regionMatrixRangeText" class="text-amber-300 font-extrabold">15</span> 天周期 · 点击地区查看逐日天气明细</p>
         </div>
         <div class="flex flex-col gap-2 self-start xl:self-auto">
           <div class="flex items-center justify-end gap-2">
@@ -3130,6 +3163,38 @@
       return { value, count: items.length, total: group.provinces.length, weatherCode: dominantItem?.day?.weatherCode ?? 3, dominantCategory };
     }
 
+    // 纯 SVG 迷你折线：不依赖 Chart.js/ECharts/CDN，按当前最高温/最低温维度与周期动态重绘。
+    function renderRegionalSparkline(daily, metric, provinceName) {
+      const field = metric === 'max' ? 'maxTemp' : 'minTemp';
+      const records = (daily || []).slice(0, state.currentRange)
+        .map((day, index) => ({ day, index, value: day ? day[field] : null }))
+        .filter(item => Number.isFinite(item.value));
+      const metricLabel = metric === 'max' ? '日最高温' : '日最低温';
+      if (!records.length) return `<span class="sparkline-empty" title="${provinceName}暂无可绘制的${metricLabel}趋势">暂无趋势</span>`;
+
+      const width = 108, height = 30, padX = 4, padY = 4;
+      const values = records.map(item => item.value);
+      const minValue = Math.min.apply(null, values);
+      const maxValue = Math.max.apply(null, values);
+      const valueRange = Math.max(1, maxValue - minValue);
+      const points = records.map((item, index) => {
+        const x = records.length === 1 ? width / 2 : padX + (index * (width - padX * 2) / (records.length - 1));
+        const y = height - padY - ((item.value - minValue) / valueRange) * (height - padY * 2);
+        return { x, y, value: item.value, date: item.day.date || '' };
+      });
+      const pointString = points.map(point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
+      const firstPoint = points[0];
+      const lastPoint = points[points.length - 1];
+      const color = metric === 'max' ? '#ea580c' : '#0284c7';
+      const pointSummary = points.map(point => `${point.date} ${convertTemp(point.value)}°${state.unit}`).join('；');
+      return `<svg class="region-sparkline" viewBox="0 0 ${width} ${height}" role="img" aria-label="${provinceName}${metricLabel}走势" title="${provinceName}${metricLabel}：${pointSummary}">
+        <line class="sparkline-guide" x1="${padX}" y1="${height/2}" x2="${width-padX}" y2="${height/2}"></line>
+        <polyline class="sparkline-line" points="${pointString}" stroke="${color}"></polyline>
+        <circle class="sparkline-dot" cx="${firstPoint.x.toFixed(1)}" cy="${firstPoint.y.toFixed(1)}" r="2.2" fill="${color}"></circle>
+        <circle class="sparkline-dot" cx="${lastPoint.x.toFixed(1)}" cy="${lastPoint.y.toFixed(1)}" r="2.7" fill="${color}"></circle>
+      </svg>`;
+    }
+
     function renderRegionForecastMatrix() {
       const head = document.getElementById('regionWeatherMatrixHead');
       const body = document.getElementById('regionWeatherMatrixBody');
@@ -3156,7 +3221,7 @@
         const dateLabel = day.dateStr || `${d.getMonth()+1}/${d.getDate()}`;
         return `<th title="${dateText}"><span>${dateLabel}</span><span class="day-of-week">${day.weekday || ''}</span></th>`;
       }).join('');
-      head.innerHTML = `<tr><th class="region-sticky">区域大类</th><th class="province-sticky">省份 / 地区小类</th><th class="period-mean-cell">周期均温</th>${dateHeaders}</tr>`;
+      head.innerHTML = `<tr><th class="region-sticky">区域大类（大区/城市）</th><th class="province-sticky">省份 / 地区小类趋势</th><th class="period-mean-cell">周期均温</th>${dateHeaders}</tr>`;
 
       const html = [];
       REGIONAL_FORECAST_GROUPS.forEach((group, groupIndex) => {
@@ -3170,7 +3235,7 @@
         const toggleIcon = collapsed ? '+' : '−';
         html.push(`<tr class="region-summary-row" data-region-summary="${group.name}">`);
         html.push(`<td class="region-sticky region-name-cell"><button type="button" class="region-toggle-button" data-toggle-region="${group.name}" aria-expanded="${!collapsed}" aria-label="${collapsed ? '展开' : '折叠'}${group.name}"><span class="region-toggle-icon" aria-hidden="true">${toggleIcon}</span><span>${group.name}</span></button><span class="region-count">${group.provinces.length} 个地区 · ${collapsed ? '已折叠' : '已展开'}</span></td>`);
-        html.push(`<td class="province-sticky">区域${metricName}均值</td>`);
+        html.push(`<td class="province-sticky province-sparkline-cell" aria-label="${group.name}地区趋势汇总"></td>`);
         html.push(`<td class="period-mean-cell" title="${group.name}所选周期均温，按每日（最高温+最低温）/2计算；周期内超出接口预报范围的日期为趋势估算">${formatRegionalMeanTemperature(regionMean)}</td>`);
         for (let i = 0; i < state.currentRange; i++) {
           const aggregate = getRegionalGroupDailyAverage(group, i, metric);
@@ -3179,8 +3244,8 @@
             continue;
           }
           const shownTemp = formatRegionalMeanTemperature(aggregate.value);
-          const title = `【${group.name}区域汇总】${days[i]?.date || ''} ${metricName}均值 ${shownTemp} · 天气代表类型：${aggregate.dominantCategory} · 有数据 ${aggregate.count}/${aggregate.total} 个地区`;
-          html.push(`<td class="weather-cell" title="${title}"><span class="weather-temp" style="color:${metricColor}">${shownTemp}</span><span class="weather-caption">区域均值 ${aggregate.count}/${aggregate.total}</span></td>`);
+          const title = `【${group.name}区域汇总】${days[i]?.date || ''} ${metricName}均值 ${shownTemp} · 天气代表类型：${aggregate.dominantCategory}`;
+          html.push(`<td class="weather-cell" title="${title}"><span class="weather-temp" style="color:${metricColor}">${shownTemp}</span><span class="weather-caption">${aggregate.dominantCategory}为主</span></td>`);
         }
         html.push('</tr>');
 
@@ -3190,9 +3255,9 @@
           const daily = forecast?.daily || [];
           const isSelected = state.regionSelectedProvince === provinceName;
           html.push(`<tr class="${isSelected ? 'region-selected' : ''}" data-region-row="${provinceName}" data-parent-region="${group.name}">`);
-          html.push(`<td class="region-sticky region-child-gutter" aria-hidden="true"></td>`);
           const province = CHINA_PROVINCES.find(p => p.name === provinceName);
-          html.push(`<td class="province-sticky"><button type="button" class="province-name-button" data-select-region-province="${provinceName}" title="查看【${group.name} / ${provinceName}】逐日明细与走势"><span>${provinceName}<small class="block mt-0.5">${province?.capital || '代表点'}</small></span><span aria-hidden="true" style="color:#64748b">›</span></button></td>`);
+          html.push(`<td class="region-sticky province-hierarchy-cell"><button type="button" class="province-name-button" data-select-region-province="${provinceName}" title="查看【${group.name} / ${provinceName}】逐日明细与走势"><span>${provinceName}<small>${province?.capital || '代表点'}</small></span><span aria-hidden="true" style="color:#64748b">›</span></button></td>`);
+          html.push(`<td class="province-sticky province-sparkline-cell" title="${provinceName}${metricName}趋势折线">${renderRegionalSparkline(daily, metric, provinceName)}</td>`);
           html.push(`<td class="period-mean-cell" title="${provinceName}所选周期均温，按每日（最高温+最低温）/2计算；周期内超出接口预报范围的日期为趋势估算">${formatRegionalMeanTemperature(getRegionalPeriodMean(daily.slice(0, state.currentRange)))}</td>`);
           for (let i = 0; i < state.currentRange; i++) {
             const day = daily[i];
