@@ -306,6 +306,133 @@
       font: 600 14px/1.7 system-ui, sans-serif;
     }
 
+  
+
+    /* 登录封面：浅色高规格商务气象风格。此处仅限定 #loginCover，避免污染全站。 */
+    #loginCover.login-cover-light {
+      isolation: isolate;
+      color: #0f172a !important;
+      background: linear-gradient(132deg, #f8fafc 0%, #eff6ff 48%, #e0f2fe 100%) !important;
+      -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
+    }
+    #loginCover .login-weather-art {
+      position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+      background: linear-gradient(132deg, #f8fafc 0%, #eff6ff 52%, #e0f2fe 100%);
+    }
+    #loginCover .login-weather-art svg { display: block; width: 100%; height: 100%; }
+    #loginCover .login-card {
+      z-index: 5;
+      color: #0f172a !important;
+      background: rgba(255, 255, 255, .84) !important;
+      border: 1px solid rgba(255, 255, 255, .92) !important;
+      box-shadow: 0 28px 80px rgba(51, 90, 128, .18), 0 8px 24px rgba(51, 90, 128, .08) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(145%);
+      backdrop-filter: blur(28px) saturate(145%);
+    }
+    #loginCover .login-card::before {
+      content: ""; position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(14, 165, 233, .42), transparent);
+      pointer-events: none;
+    }
+    #loginCover .login-card h2 { color: #0f2742 !important; letter-spacing: -.035em; }
+    #loginCover .login-card p { color: #64748b !important; }
+    #loginCover .login-card .text-white,
+    #loginCover .login-card [class*="text-white/"] { color: #475569 !important; }
+    #loginCover .login-card .login-brand-icon {
+      color: #ffffff !important;
+      background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 58%, #4f46e5 100%) !important;
+      box-shadow: 0 12px 26px rgba(37, 99, 235, .22) !important;
+      border: 1px solid rgba(255, 255, 255, .8);
+      ring-color: rgba(14, 165, 233, .14) !important;
+    }
+    #loginCover .login-card-chip {
+      color: #0369a1 !important; background: rgba(224, 242, 254, .9) !important;
+      border: 1px solid rgba(125, 211, 252, .72) !important;
+    }
+    #loginCover .login-card label { color: #334155 !important; }
+    #loginCover .login-card label i { color: #0284c7 !important; }
+    #loginCover #loginAccountSelect,
+    #loginCover #loginPasswordInput {
+      appearance: auto;
+      -webkit-appearance: auto;
+      width: 100%; color: #0f172a !important; background: rgba(255, 255, 255, .94) !important;
+      border: 1px solid #cbd5e1 !important; border-radius: 12px;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, .025);
+    }
+    #loginCover #loginAccountSelect { padding-right: 2.4rem; }
+    #loginCover #loginAccountSelect:focus,
+    #loginCover #loginPasswordInput:focus {
+      border-color: #38bdf8 !important; outline: 3px solid rgba(56, 189, 248, .16) !important;
+      box-shadow: 0 0 0 1px rgba(14, 165, 233, .08) !important;
+    }
+    #loginCover #loginAccountSelect option { color: #0f172a !important; background: #ffffff !important; }
+    #loginCover #loginPasswordInput::placeholder { color: #94a3b8 !important; opacity: 1; }
+    #loginCover #togglePasswordBtn { color: #64748b !important; }
+    #loginCover #togglePasswordBtn:hover { color: #0284c7 !important; }
+    #loginCover #loginErrorTip { color: #be123c !important; background: rgba(255, 241, 242, .94) !important; border-color: #fecdd3 !important; }
+    #loginCover #loginErrorTip span { color: #be123c !important; }
+    #loginCover #loginSubmitBtn {
+      color: #ffffff !important;
+      background: linear-gradient(100deg, #0284c7 0%, #2563eb 55%, #4f46e5 100%) !important;
+      box-shadow: 0 10px 22px rgba(37, 99, 235, .2) !important;
+    }
+    #loginCover #loginSubmitBtn:hover { filter: brightness(1.06); }
+    #loginCover .login-card .border-t { border-color: #e2e8f0 !important; }
+
+    /* 浮动微型气象情报徽章 */
+    #loginCover .login-intel-badge {
+      position: fixed; z-index: 2; width: 250px; padding: 14px 15px 12px;
+      border: 1px solid rgba(148, 163, 184, .27); border-radius: 15px;
+      background: rgba(255, 255, 255, .66); color: #334155;
+      box-shadow: 0 12px 36px rgba(51, 90, 128, .07), inset 0 1px rgba(255,255,255,.95);
+      -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+      pointer-events: none; font-variant-numeric: tabular-nums;
+    }
+    #loginCover .login-intel-tl { top: 28px; left: 28px; }
+    #loginCover .login-intel-tr { top: 28px; right: 28px; }
+    #loginCover .login-intel-bl { bottom: 28px; left: 28px; }
+    #loginCover .login-intel-br { bottom: 28px; right: 28px; }
+    #loginCover .intel-overline { display: flex; align-items: center; gap: 7px; color: #64748b; font: 800 9px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .105em; }
+    #loginCover .intel-dot { width: 6px; height: 6px; flex: 0 0 6px; border-radius: 50%; background: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.11); }
+    #loginCover .intel-dot-blue { background: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
+    #loginCover .intel-dot-green { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.1); }
+    #loginCover .intel-dot-amber { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.1); }
+    #loginCover .login-intel-badge strong { display: block; margin-top: 9px; color: #193b59; font-size: 12px; font-weight: 850; letter-spacing: .015em; }
+    #loginCover .intel-detail { margin-top: 5px; color: #73869a; font-size: 10px; line-height: 1.45; }
+    #loginCover .intel-meter { height: 4px; margin-top: 11px; overflow: hidden; border-radius: 99px; background: #e2e8f0; }
+    #loginCover .intel-meter span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #38bdf8, #2563eb); }
+    #loginCover .intel-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 9px; color: #94a3b8; font: 700 8px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em; }
+    #loginCover .intel-models { display: flex; align-items: center; gap: 8px; margin-top: 11px; }
+    #loginCover .intel-models span { padding: 4px 7px; border-radius: 6px; border: 1px solid #dbeafe; background: #eff6ff; color: #1d4ed8; font: 800 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    #loginCover .intel-models i { width: 28px; height: 1px; background: linear-gradient(90deg, #60a5fa, #a5b4fc); }
+    #loginCover .intel-sensor-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+    #loginCover .intel-sensor-list span { padding: 3px 6px; border-radius: 5px; background: #ecfdf5; border: 1px solid #d1fae5; color: #047857; font-size: 9px; }
+    #loginCover .intel-isobars { display: flex; gap: 5px; margin-top: 10px; align-items: center; }
+    #loginCover .intel-isobars span { padding: 3px 5px; border-radius: 5px; background: #f0f9ff; border: 1px solid #dbeafe; color: #0369a1; font: 800 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    #loginCover .intel-isobars small { font-size: 7px; font-weight: 600; }
+    @media (max-width: 1050px) {
+      #loginCover .login-intel-badge { width: 218px; padding: 12px; }
+      #loginCover .login-intel-tl { left: 16px; }
+      #loginCover .login-intel-tr { right: 16px; }
+      #loginCover .login-intel-bl { left: 16px; }
+      #loginCover .login-intel-br { right: 16px; }
+    }
+    @media (max-width: 850px) {
+      #loginCover .login-intel-badge { display: none; }
+      #loginCover .login-weather-art svg { opacity: .78; }
+      #loginCover .login-card { margin: 18px 0; }
+    }
+    @media (max-width: 480px) {
+      #loginCover { padding: 14px !important; align-items: center; }
+      #loginCover .login-card { padding: 24px 20px !important; border-radius: 23px !important; }
+      #loginCover .login-card h2 { font-size: 22px; }
+      #loginCover .login-weather-art svg { width: 150%; max-width: none; transform: translateX(-12%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #loginCover *, #loginCover *::before, #loginCover *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+
   </style>
 </head>
 <body id="appBody" class="min-h-screen text-white font-sans antialiased theme-sunny transition-colors duration-700 relative overflow-x-hidden selection:bg-amber-400 selection:text-slate-900">
@@ -1197,22 +1324,138 @@
   </div>
 
   <!-- 系统专属业务登录封面与登录页面 Cover (支持下拉选择账号) -->
-  <div id="loginCover" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/85 backdrop-blur-2xl transition-all duration-500 overflow-y-auto p-4 sm:p-6">
-    <!-- 封面环境装饰浮光 -->
-    <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-      <div class="absolute -top-24 -left-24 w-[36rem] h-[36rem] bg-blue-600/25 rounded-full blur-3xl ambient-glow"></div>
-      <div class="absolute bottom-0 -right-24 w-[32rem] h-[32rem] bg-indigo-600/25 rounded-full blur-3xl ambient-glow" style="animation-delay: -3s;"></div>
-      <div class="absolute top-1/2 left-1/3 w-[26rem] h-[26rem] bg-amber-500/15 rounded-full blur-3xl ambient-glow" style="animation-delay: -5s;"></div>
+  <div id="loginCover" class="login-cover-light fixed inset-0 z-[100] flex items-center justify-center transition-all duration-500 overflow-y-auto p-4 sm:p-6">
+    <!-- 浅色专业气象底纹：纯内嵌 SVG，不依赖外部图片资源 -->
+    <div class="login-weather-art" aria-hidden="true">
+      <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" role="presentation" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="loginSkyWash" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f8fafc"/>
+            <stop offset="42%" stop-color="#eaf5fc"/>
+            <stop offset="100%" stop-color="#dbeafe"/>
+          </linearGradient>
+          <radialGradient id="loginMorningGlow" cx="17%" cy="18%" r="68%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity=".98"/>
+            <stop offset="58%" stop-color="#dbeafe" stop-opacity=".24"/>
+            <stop offset="100%" stop-color="#dbeafe" stop-opacity="0"/>
+          </radialGradient>
+          <pattern id="loginLatLonGrid" width="90" height="72" patternUnits="userSpaceOnUse">
+            <path d="M90 0H0V72" fill="none" stroke="#7ba7c9" stroke-width=".8" stroke-opacity=".24"/>
+            <path d="M45 0V72M0 36H90" fill="none" stroke="#7ba7c9" stroke-width=".45" stroke-opacity=".11" stroke-dasharray="2 5"/>
+          </pattern>
+          <linearGradient id="loginFlowLine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#0284c7" stop-opacity=".02"/>
+            <stop offset="48%" stop-color="#0284c7" stop-opacity=".42"/>
+            <stop offset="100%" stop-color="#2563eb" stop-opacity=".05"/>
+          </linearGradient>
+          <radialGradient id="loginRadarFill">
+            <stop offset="0%" stop-color="#38bdf8" stop-opacity=".13"/>
+            <stop offset="70%" stop-color="#38bdf8" stop-opacity=".04"/>
+            <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <rect width="1600" height="900" fill="url(#loginSkyWash)"/>
+        <rect width="1600" height="900" fill="url(#loginMorningGlow)"/>
+        <rect width="1600" height="900" fill="url(#loginLatLonGrid)"/>
+        <!-- 经纬度参考线 -->
+        <g fill="none" stroke="#5688ac" stroke-width=".9" stroke-opacity=".18">
+          <path d="M0 170 C360 210 620 130 880 170 S1320 210 1600 155"/>
+          <path d="M0 360 C350 390 650 320 920 360 S1330 390 1600 345"/>
+          <path d="M0 565 C330 525 650 600 960 555 S1330 525 1600 575"/>
+          <path d="M0 745 C380 705 690 770 1000 730 S1370 700 1600 740"/>
+          <path d="M260 0 C220 250 305 540 270 900"/>
+          <path d="M610 0 C660 240 560 600 625 900"/>
+          <path d="M1000 0 C950 260 1050 570 1005 900"/>
+          <path d="M1360 0 C1410 260 1310 570 1365 900"/>
+        </g>
+        <!-- 气压等值线：1008—1024 hPa -->
+        <g fill="none" stroke="#4389b5" stroke-width="1.45" stroke-opacity=".31">
+          <path d="M-70 270 C90 165 260 174 370 242 C490 314 580 296 670 220 C775 130 900 145 1000 225 C1090 298 1190 305 1280 244 C1390 168 1500 180 1670 280"/>
+          <path d="M-70 298 C105 208 260 214 366 270 C484 335 577 328 674 255 C776 177 885 180 980 250 C1085 328 1193 336 1293 279 C1401 215 1512 223 1670 315"/>
+          <path d="M-70 324 C106 250 253 254 354 300 C475 356 574 356 674 290 C773 229 865 224 959 279 C1074 345 1190 370 1305 314 C1414 260 1526 266 1670 350"/>
+          <path d="M170 95 C260 35 370 48 425 108 C474 162 467 219 410 249 C350 281 266 268 221 223 C175 177 132 135 170 95Z"/>
+          <path d="M205 112 C278 65 359 75 401 119 C438 159 432 205 390 229 C343 256 282 245 246 211 C211 179 174 138 205 112Z"/>
+          <path d="M1050 660 C1170 555 1325 560 1438 642 C1538 714 1510 814 1403 851 C1275 896 1124 835 1072 755 C1049 720 1030 689 1050 660Z"/>
+          <path d="M1095 683 C1191 602 1313 604 1400 668 C1479 727 1455 794 1378 823 C1278 861 1160 814 1117 750 C1096 719 1080 700 1095 683Z"/>
+        </g>
+        <!-- 雷达环与方位刻度 -->
+        <g transform="translate(1285 275)">
+          <circle r="210" fill="url(#loginRadarFill)"/>
+          <g fill="none" stroke="#0284c7" stroke-opacity=".25">
+            <circle r="45" stroke-width="1.2"/><circle r="90" stroke-width="1.1"/>
+            <circle r="135" stroke-width="1.1"/><circle r="180" stroke-width="1.1"/>
+            <circle r="208" stroke-width="1.1" stroke-dasharray="4 7"/>
+            <path d="M-220 0H220M0-220V220M-155-155L155 155M-155 155L155-155" stroke-width=".85" stroke-dasharray="3 6"/>
+          </g>
+          <path d="M0 0L0 -180 A180 180 0 0 1 127 -127Z" fill="#38bdf8" fill-opacity=".10"/>
+          <circle r="5" fill="#0284c7" fill-opacity=".68"/><circle r="2" fill="#ffffff"/>
+          <g fill="#477b9f" font-family="system-ui, sans-serif" font-size="10" letter-spacing="1.4">
+            <text x="-4" y="-230" text-anchor="middle">N</text><text x="230" y="4">E</text>
+            <text x="-4" y="242" text-anchor="middle">S</text><text x="-242" y="4">W</text>
+          </g>
+          <g stroke="#397da5" stroke-opacity=".36" stroke-width="1">
+            <path d="M0-210v10M74-196l-4 10M148-148l-10 10M196-74l-10 4M210 0h-10M196 74l-10-4M148 148l-10-10M74 196l-4-10M0 210v-10M-74 196l4-10M-148 148l10-10M-196 74l10-4M-210 0h10M-196-74l10 4M-148-148l10 10M-74-196l4 10"/>
+          </g>
+        </g>
+        <!-- 高空风场流线 -->
+        <g fill="none" stroke="url(#loginFlowLine)" stroke-width="2.3" stroke-linecap="round">
+          <path d="M-40 490 C180 400 315 430 430 478 S660 560 820 480 S1090 385 1260 440 S1490 510 1650 430"/>
+          <path d="M-30 515 C180 430 318 457 443 503 S662 585 836 510 S1088 416 1268 468 S1495 540 1640 462"/>
+          <path d="M-30 540 C182 460 336 485 452 530 S675 612 854 540 S1100 446 1284 495 S1500 566 1640 494"/>
+        </g>
+        <!-- 风羽导向标 -->
+        <g stroke="#2878a8" stroke-width="2" stroke-linecap="round" stroke-opacity=".42" fill="none">
+          <g transform="translate(430 180) rotate(-24)"><path d="M0 0L78 0M59 0L49 -14M48 0L38 -14M37 0L27 -14M78 0L68 12"/></g>
+          <g transform="translate(890 705) rotate(18)"><path d="M0 0L72 0M54 0L44 -13M43 0L33 -13M32 0L22 -13M72 0L62 12"/></g>
+          <g transform="translate(1460 515) rotate(-38)"><path d="M0 0L65 0M49 0L39 -12M38 0L28 -12M65 0L55 11"/></g>
+        </g>
+        <g fill="#3c7397" fill-opacity=".52" font-family="ui-monospace, monospace" font-size="11" letter-spacing="1.1">
+          <text x="70" y="130">ISOBAR FIELD / 1008–1024 hPa</text>
+          <text x="70" y="149" font-size="9" letter-spacing="1.8">SYNOPTIC ANALYSIS · SURFACE PRESSURE</text>
+          <text x="70" y="820">35°N · 110°E  /  LAT-LON REFERENCE GRID</text>
+          <text x="70" y="840" font-size="9" letter-spacing="1.8">SKYPULSE METEOROLOGICAL INTELLIGENCE</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- 四角商务气象情报徽章：展示系统能力标签，不伪装成正在刷新的实时数据 -->
+    <div class="login-intel-badge login-intel-tl" aria-hidden="true">
+      <div class="intel-overline"><span class="intel-dot"></span> SATELLITE RETRIEVAL</div>
+      <strong>卫星反演 · 多光谱云图</strong>
+      <div class="intel-detail">红外亮温 / 水汽通道 / 云系识别</div>
+      <div class="intel-meter"><span style="width:78%"></span></div>
+      <div class="intel-foot"><span>遥感分析图层</span><span>IR · WV</span></div>
+    </div>
+    <div class="login-intel-badge login-intel-tr" aria-hidden="true">
+      <div class="intel-overline"><span class="intel-dot intel-dot-blue"></span> NUMERICAL WEATHER MODEL</div>
+      <strong>数值模式并轨</strong>
+      <div class="intel-models"><span>ECMWF</span><i></i><span>GFS</span></div>
+      <div class="intel-detail">双模式场 · 预报对照视图</div>
+      <div class="intel-foot"><span>MODEL BLEND</span><span>VISUAL LAYER</span></div>
+    </div>
+    <div class="login-intel-badge login-intel-bl" aria-hidden="true">
+      <div class="intel-overline"><span class="intel-dot intel-dot-green"></span> SURFACE OBSERVATION</div>
+      <strong>全国地面观测网自检</strong>
+      <div class="intel-sensor-list"><span>温度</span><span>湿度</span><span>风场</span><span>气压</span></div>
+      <div class="intel-detail">站网传感器健康度 · 指标视图</div>
+      <div class="intel-foot"><span>观测情资面板</span><span>UI SCHEMATIC</span></div>
+    </div>
+    <div class="login-intel-badge login-intel-br" aria-hidden="true">
+      <div class="intel-overline"><span class="intel-dot intel-dot-amber"></span> PRESSURE & WIND FIELD</div>
+      <strong>气压场 · 风向流线</strong>
+      <div class="intel-isobars"><span>1008</span><span>1012</span><span>1016</span><span>1020</span><span>1024 <small>hPa</small></span></div>
+      <div class="intel-detail">等压线 / 雷达方位刻度 / 经纬网</div>
+      <div class="intel-foot"><span>ISOBAR CONTOURS</span><span>1008–1024 hPa</span></div>
     </div>
 
     <!-- 登录卡片主体 -->
-    <div class="glass-card rounded-3xl max-w-md w-full p-8 sm:p-9 shadow-2xl border border-white/25 text-white relative overflow-hidden transition-all duration-300">
+    <div class="glass-card login-card rounded-3xl max-w-md w-full p-8 sm:p-9 shadow-2xl border border-white/25 text-white relative overflow-hidden transition-all duration-300">
       <!-- 顶部品牌图标与平台标识 -->
       <div class="text-center mb-6">
-        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-indigo-600 flex items-center justify-center text-3xl text-white mx-auto mb-4 shadow-lg ring-4 ring-white/10">
+        <div class="login-brand-icon w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-indigo-600 flex items-center justify-center text-3xl text-white mx-auto mb-4 shadow-lg ring-4 ring-white/10">
           <i class="fa-solid fa-cloud-sun"></i>
         </div>
-        <div class="inline-block px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-semibold mb-2">
+        <div class="login-card-chip inline-block px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-semibold mb-2">
           气象观测与智能决策中心
         </div>
         <h2 class="text-2xl font-black tracking-tight">SkyPulse 气象视界</h2>
