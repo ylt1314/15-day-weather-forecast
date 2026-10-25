@@ -108,6 +108,16 @@
     }
 
 
+    /* 独立矩阵城市搜索选择器 */
+    .matrix-city-input { color: #f8fafc; background: rgba(15,23,42,.34); border: 1px solid rgba(255,255,255,.22); outline: none; transition: border-color .15s, box-shadow .15s; }
+    .matrix-city-input:focus { border-color: rgba(56,189,248,.75); box-shadow: 0 0 0 2px rgba(56,189,248,.15); }
+    .matrix-city-input::placeholder { color: rgba(255,255,255,.40); }
+    .matrix-city-dropdown { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 60; min-width: 250px; max-height: 260px; overflow-y: auto; border: 1px solid rgba(255,255,255,.2); border-radius: 12px; background: rgba(15,23,42,.97); box-shadow: 0 18px 44px rgba(0,0,0,.3); backdrop-filter: blur(16px); }
+    .matrix-city-option { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:9px 12px; color:#f8fafc; text-align:left; font-size:11px; border-bottom:1px solid rgba(255,255,255,.08); cursor:pointer; }
+    .matrix-city-option:last-child { border-bottom:0; }
+    .matrix-city-option:hover, .matrix-city-option:focus { background: rgba(56,189,248,.16); outline:none; }
+    .matrix-city-tier { color: #7dd3fc; font-size: 9px; white-space:nowrap; }
+    .precip-metric-btn.active { color:#0f172a; background:#fff; box-shadow:0 3px 10px rgba(0,0,0,.12); font-weight:800; }
     /* 全国七大区域未来天气矩阵（新增模块，独立于原有组件样式） */
     .region-matrix-shell { overflow: auto; max-width: 100%; border: 1px solid rgba(255,255,255,.16); border-radius: 16px; background: rgba(2,6,23,.18); }
     .region-weather-table { border-collapse: separate; border-spacing: 0; min-width: max-content; width: 100%; font-variant-numeric: tabular-nums; }
@@ -524,6 +534,7 @@
           <button id="tierFilterT1" class="tier-filter-btn px-2.5 py-1 rounded-lg text-white/70 hover:text-white transition">一线</button>
           <button id="tierFilterNewT1" class="tier-filter-btn px-2.5 py-1 rounded-lg text-white/70 hover:text-white transition">新一线</button>
           <button id="tierFilterT2" class="tier-filter-btn px-2.5 py-1 rounded-lg text-white/70 hover:text-white transition">二线</button>
+          <button id="tierFilterT3" class="tier-filter-btn px-2.5 py-1 rounded-lg text-white/70 hover:text-white transition">三线</button>
         </div>
       </div>
       <div id="hotCitiesContainer" class="flex items-center gap-2 shrink-0 overflow-x-auto no-scrollbar py-1">
@@ -1032,6 +1043,14 @@
             <p id="statusMatrixYearNotice" class="text-xs text-white/60 mt-1">
               各月份晴天、多云/阴天与雨雪天数结构占比热力矩阵 · 悬停单元格查看具体发生天数
             </p>
+
+          <div class="matrix-city-picker relative mt-3 flex items-center gap-2 flex-wrap" data-matrix-city="status">
+            <label for="statusMatrixCityInput" class="text-[11px] text-white/60 shrink-0"><i class="fa-solid fa-location-dot mr-1 text-cyan-300"></i>本矩阵城市</label>
+            <div class="relative w-48 max-w-full">
+              <input id="statusMatrixCityInput" type="text" value="北京" autocomplete="off" placeholder="下拉选择或搜索城市" class="matrix-city-input w-full rounded-lg px-3 py-2 text-xs" aria-label="天气状态矩阵城市选择">
+              <div id="statusMatrixCityDropdown" class="matrix-city-dropdown hidden" role="listbox"></div>
+            </div>
+          </div>
           </div>
 
           <!-- 状态图例说明 -->
@@ -1060,6 +1079,14 @@
             <p id="matrixYearNotice" class="text-xs text-white/60 mt-1">
               各月份气温分级发生天数热力色阶统计 · 悬停单元格查看具体天数与占比
             </p>
+
+          <div class="matrix-city-picker relative mt-3 flex items-center gap-2 flex-wrap" data-matrix-city="temperature">
+            <label for="temperatureMatrixCityInput" class="text-[11px] text-white/60 shrink-0"><i class="fa-solid fa-location-dot mr-1 text-cyan-300"></i>本矩阵城市</label>
+            <div class="relative w-48 max-w-full">
+              <input id="temperatureMatrixCityInput" type="text" value="北京" autocomplete="off" placeholder="下拉选择或搜索城市" class="matrix-city-input w-full rounded-lg px-3 py-2 text-xs" aria-label="气温区间矩阵城市选择">
+              <div id="temperatureMatrixCityDropdown" class="matrix-city-dropdown hidden" role="listbox"></div>
+            </div>
+          </div>
           </div>
 
           <!-- 温度统计维度切换与五档色阶图例 -->
@@ -1095,20 +1122,29 @@
           <div>
             <h3 class="text-sm sm:text-base font-bold flex items-center gap-2">
               <i class="fa-solid fa-cloud-showers-water text-cyan-300"></i>
-              <span><span id="precipMatrixCityText" class="text-amber-300 font-extrabold mr-1">北京市</span>最近 3 年（<span id="precipMatrixYearsText">2024 - 2026</span>）月度降水量对比分布矩阵图</span>
+              <span><span id="precipMatrixCityText" class="text-amber-300 font-extrabold mr-1">北京市</span>最近 5 年（<span id="precipMatrixYearsText">2022 - 2026</span>）<span id="precipMatrixMetricTitle">月度降水量</span>对比分布矩阵图</span>
             </h3>
             <p id="precipMatrixNotice" class="text-xs text-white/60 mt-1">
               各月份降水量（mm）逐年分布热力矩阵 · 悬停单元格查看各年差异与 3 年均值
             </p>
+
+          <div class="matrix-city-picker relative mt-3 flex items-center gap-2 flex-wrap" data-matrix-city="precipitation">
+            <label for="precipMatrixCityInput" class="text-[11px] text-white/60 shrink-0"><i class="fa-solid fa-location-dot mr-1 text-cyan-300"></i>本矩阵城市</label>
+            <div class="relative w-48 max-w-full">
+              <input id="precipMatrixCityInput" type="text" value="北京" autocomplete="off" placeholder="下拉选择或搜索城市" class="matrix-city-input w-full rounded-lg px-3 py-2 text-xs" aria-label="五年气象矩阵城市选择">
+              <div id="precipMatrixCityDropdown" class="matrix-city-dropdown hidden" role="listbox"></div>
+            </div>
+          </div>
           </div>
 
-          <!-- 降水量区间图例说明 -->
-          <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-white/70">
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-sky-600 border border-sky-300"></span>≥ 120mm 汛期多雨</span>
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-sky-500"></span>60 - 120mm 充沛湿润</span>
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-cyan-500"></span>20 - 60mm 适中平稳</span>
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-blue-400/30"></span>&lt; 20mm 偏少干燥</span>
-            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded border border-dashed border-white/40 bg-white/5"></span>未走完</span>
+          <!-- 指标切换与动态色阶图例 -->
+          <div class="flex flex-col items-start lg:items-end gap-2">
+            <div id="precipMatrixMetricControls" class="glass-pill p-1 rounded-xl flex items-center gap-1 text-xs font-semibold" role="group" aria-label="五年月度气象指标">
+              <button type="button" data-precip-metric="maxTemp" class="precip-metric-btn px-3 py-1.5 rounded-lg text-white/70">最高温</button>
+              <button type="button" data-precip-metric="minTemp" class="precip-metric-btn px-3 py-1.5 rounded-lg text-white/70">最低温</button>
+              <button type="button" data-precip-metric="precip" class="precip-metric-btn px-3 py-1.5 rounded-lg bg-white text-slate-900 shadow-sm font-bold">月降水量</button>
+            </div>
+            <div id="monthlyPrecipLegend" class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-white/70 lg:justify-end"></div>
           </div>
         </div>
 
@@ -1129,7 +1165,7 @@
               <i class="fa-solid fa-calendar-day"></i>
             </div>
             <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">
-              <span id="monthlyArchiveTitleBadge" class="text-amber-300 mr-1 font-extrabold">【东莞市】2016 年 1 月</span>历史月度气象档案
+              <span id="monthlyArchiveTitleBadge" class="text-amber-300 mr-1 font-extrabold">【广州市】2025 年 11 月</span>历史月度气象档案
             </h2>
           </div>
           <p id="monthlyArchiveSubtitle" class="text-xs sm:text-sm text-white/70 mt-1">
@@ -1146,7 +1182,7 @@
               <input 
                 id="monthlyArchiveCityInput" 
                 type="text" 
-                value="东莞" 
+                value="广州" 
                 placeholder="搜索任意城市..." 
                 autocomplete="off"
                 class="bg-transparent text-white font-bold outline-none text-xs w-24 sm:w-28 placeholder-white/40"
@@ -1173,7 +1209,7 @@
           <div class="flex items-center gap-1.5 glass-pill px-3 py-1.5 rounded-xl text-xs">
             <span class="text-white/60"><i class="fa-solid fa-calendar text-amber-300 mr-1"></i>年份:</span>
             <select id="monthlyArchiveYearSelect" class="bg-transparent text-amber-300 font-bold outline-none cursor-pointer">
-              <!-- 2026 down to 2012, default 2016 -->
+              <!-- 2026 down to 2012, default 2025 -->
             </select>
           </div>
 
@@ -1181,7 +1217,7 @@
           <div class="flex items-center gap-1.5 glass-pill px-3 py-1.5 rounded-xl text-xs">
             <span class="text-white/60"><i class="fa-solid fa-clock text-cyan-300 mr-1"></i>月份:</span>
             <select id="monthlyArchiveMonthSelect" class="bg-transparent text-cyan-300 font-bold outline-none cursor-pointer">
-              <!-- 1月 to 12月, default 1月 -->
+              <!-- 1月 to 12月, default 11月 -->
             </select>
           </div>
         </div>
@@ -1767,8 +1803,15 @@
       currentUser: null,  // 当前登录账号
       isLoggedIn: false,  // 登录状态标识
       historicalData: null,
-      histSelectedYear: new Date().getFullYear() <= 2026 ? new Date().getFullYear() : 2026,
-      histCompareYear: 2012, // 默认对比年份更新为 2012 年 (覆盖 15 年跨度)
+      histSelectedYear: 2026, // 默认基准年份
+      histCompareYear: 2025, // 默认对比年份
+      matrixCitySelections: {
+        status: { name: '北京', country: '中国', latitude: 39.9042, longitude: 116.4074 },
+        temperature: { name: '北京', country: '中国', latitude: 39.9042, longitude: 116.4074 },
+        precipitation: { name: '北京', country: '中国', latitude: 39.9042, longitude: 116.4074 }
+      },
+      matrixHistoryCache: {},
+      precipMatrixMetric: 'precip',
       histMetric: 'avg', // 'avg', 'max', 'min'
       temperatureTierMode: 'max', // 'max' 按日最高温分档，'min' 按日最低温分档
       histComparisonChartInstance: null,
@@ -1779,10 +1822,10 @@
       currentCityDataList: [], // 当前省份各地级市气温数据集
       hotCityTierFilter: 'all', // 热门城市当前分类筛选: 'all', '一线', '新一线', '二线'
       monthlyArchive: {
-        city: '东莞',
-        cityCoords: { latitude: 23.0205, longitude: 113.7518 },
-        year: 2016,
-        month: 1,
+        city: '广州',
+        cityCoords: { latitude: 23.1291, longitude: 113.2644 },
+        year: 2025,
+        month: 11,
         dimension: 'maxTemp', // 'maxTemp', 'minTemp', 'precip', 'rainyDays'
         mapLevel: 'country', // 'country' or 'province'
         currentProvinceData: null,
@@ -1850,6 +1893,68 @@
       { name: '兰州', tier: '二线', country: '甘肃 · 中国', latitude: 36.0611, longitude: 103.8343 },
       { name: '海口', tier: '二线', country: '海南 · 中国', latitude: 20.0440, longitude: 110.1999 }
     ];
+
+    // 三线与扩展地级市：补全更多可直接选择的城市；在线地理编码搜索仍可查询更广泛地区。
+    const THIRD_TIER_CITIES = [
+      { name: '保定', tier: '三线', country: '河北 · 中国', latitude: 38.8739, longitude: 115.4646 },
+      { name: '唐山', tier: '三线', country: '河北 · 中国', latitude: 39.6305, longitude: 118.1802 },
+      { name: '邯郸', tier: '三线', country: '河北 · 中国', latitude: 36.6256, longitude: 114.5391 },
+      { name: '秦皇岛', tier: '三线', country: '河北 · 中国', latitude: 39.9354, longitude: 119.5996 },
+      { name: '临沂', tier: '三线', country: '山东 · 中国', latitude: 35.1047, longitude: 118.3564 },
+      { name: '潍坊', tier: '三线', country: '山东 · 中国', latitude: 36.7069, longitude: 119.1618 },
+      { name: '淄博', tier: '三线', country: '山东 · 中国', latitude: 36.8131, longitude: 118.0548 },
+      { name: '滨州', tier: '三线', country: '山东 · 中国', latitude: 37.3819, longitude: 117.9707 },
+      { name: '徐州', tier: '三线', country: '江苏 · 中国', latitude: 34.2044, longitude: 117.2841 },
+      { name: '盐城', tier: '三线', country: '江苏 · 中国', latitude: 33.3474, longitude: 120.1636 },
+      { name: '扬州', tier: '三线', country: '江苏 · 中国', latitude: 32.3942, longitude: 119.4129 },
+      { name: '镇江', tier: '三线', country: '江苏 · 中国', latitude: 32.1880, longitude: 119.4250 },
+      { name: '泰州', tier: '三线', country: '江苏 · 中国', latitude: 32.4558, longitude: 119.9231 },
+      { name: '宿迁', tier: '三线', country: '江苏 · 中国', latitude: 33.9630, longitude: 118.2752 },
+      { name: '金华', tier: '三线', country: '浙江 · 中国', latitude: 29.0792, longitude: 119.6474 },
+      { name: '台州', tier: '三线', country: '浙江 · 中国', latitude: 28.6564, longitude: 121.4208 },
+      { name: '绍兴', tier: '三线', country: '浙江 · 中国', latitude: 30.0303, longitude: 120.5802 },
+      { name: '湖州', tier: '三线', country: '浙江 · 中国', latitude: 30.8943, longitude: 120.0868 },
+      { name: '莆田', tier: '三线', country: '福建 · 中国', latitude: 25.4540, longitude: 119.0078 },
+      { name: '漳州', tier: '三线', country: '福建 · 中国', latitude: 24.5135, longitude: 117.6471 },
+      { name: '龙岩', tier: '三线', country: '福建 · 中国', latitude: 25.0751, longitude: 117.0174 },
+      { name: '赣州', tier: '三线', country: '江西 · 中国', latitude: 25.8311, longitude: 114.9335 },
+      { name: '九江', tier: '三线', country: '江西 · 中国', latitude: 29.7051, longitude: 116.0019 },
+      { name: '上饶', tier: '三线', country: '江西 · 中国', latitude: 28.4549, longitude: 117.9434 },
+      { name: '株洲', tier: '三线', country: '湖南 · 中国', latitude: 27.8274, longitude: 113.1339 },
+      { name: '衡阳', tier: '三线', country: '湖南 · 中国', latitude: 26.8932, longitude: 112.5720 },
+      { name: '岳阳', tier: '三线', country: '湖南 · 中国', latitude: 29.3571, longitude: 113.1289 },
+      { name: '常德', tier: '三线', country: '湖南 · 中国', latitude: 29.0317, longitude: 111.6985 },
+      { name: '洛阳', tier: '三线', country: '河南 · 中国', latitude: 34.6197, longitude: 112.4540 },
+      { name: '南阳', tier: '三线', country: '河南 · 中国', latitude: 32.9908, longitude: 112.5283 },
+      { name: '新乡', tier: '三线', country: '河南 · 中国', latitude: 35.3030, longitude: 113.9268 },
+      { name: '襄阳', tier: '三线', country: '湖北 · 中国', latitude: 32.0090, longitude: 112.1226 },
+      { name: '宜昌', tier: '三线', country: '湖北 · 中国', latitude: 30.6919, longitude: 111.2865 },
+      { name: '荆州', tier: '三线', country: '湖北 · 中国', latitude: 30.3269, longitude: 112.2397 },
+      { name: '绵阳', tier: '三线', country: '四川 · 中国', latitude: 31.4675, longitude: 104.6796 },
+      { name: '宜宾', tier: '三线', country: '四川 · 中国', latitude: 28.7518, longitude: 104.6432 },
+      { name: '泸州', tier: '三线', country: '四川 · 中国', latitude: 28.8718, longitude: 105.4423 },
+      { name: '南充', tier: '三线', country: '四川 · 中国', latitude: 30.8378, longitude: 106.1107 },
+      { name: '遵义', tier: '三线', country: '贵州 · 中国', latitude: 27.7257, longitude: 106.9274 },
+      { name: '曲靖', tier: '三线', country: '云南 · 中国', latitude: 25.4900, longitude: 103.7962 },
+      { name: '玉溪', tier: '三线', country: '云南 · 中国', latitude: 24.3520, longitude: 102.5435 },
+      { name: '大理', tier: '三线', country: '云南 · 中国', latitude: 25.6065, longitude: 100.2676 },
+      { name: '日照', tier: '三线', country: '山东 · 中国', latitude: 35.4164, longitude: 119.5269 },
+      { name: '连云港', tier: '三线', country: '江苏 · 中国', latitude: 34.5967, longitude: 119.2216 },
+      { name: '鞍山', tier: '三线', country: '辽宁 · 中国', latitude: 41.1087, longitude: 122.9946 },
+      { name: '吉林市', tier: '三线', country: '吉林 · 中国', latitude: 43.8378, longitude: 126.5496 },
+      { name: '齐齐哈尔', tier: '三线', country: '黑龙江 · 中国', latitude: 47.3543, longitude: 123.9182 },
+      { name: '大庆', tier: '三线', country: '黑龙江 · 中国', latitude: 46.5876, longitude: 125.1031 },
+      { name: '德阳', tier: '三线', country: '四川 · 中国', latitude: 31.1268, longitude: 104.3979 },
+      { name: '达州', tier: '三线', country: '四川 · 中国', latitude: 31.2096, longitude: 107.4678 },
+      { name: '汕尾', tier: '三线', country: '广东 · 中国', latitude: 22.7862, longitude: 115.3753 },
+      { name: '河源', tier: '三线', country: '广东 · 中国', latitude: 23.7463, longitude: 114.7006 },
+      { name: '清远', tier: '三线', country: '广东 · 中国', latitude: 23.6817, longitude: 113.0560 },
+      { name: '茂名', tier: '三线', country: '广东 · 中国', latitude: 21.6630, longitude: 110.9255 },
+      { name: '梅州', tier: '三线', country: '广东 · 中国', latitude: 24.2886, longitude: 116.1226 },
+      { name: '潮州', tier: '三线', country: '广东 · 中国', latitude: 23.6570, longitude: 116.6226 },
+      { name: '揭阳', tier: '三线', country: '广东 · 中国', latitude: 23.5499, longitude: 116.3729 }
+    ];
+    TIER_CITIES.push(...THIRD_TIER_CITIES);
 
     // 兼容器常用索引引用
     const HOT_CITIES = TIER_CITIES;
@@ -4053,6 +4158,7 @@
       if (dateEl) dateEl.textContent = dateContext.dateText;
       const currentKey = `${dateContext.year}-${dateContext.month}-${dateContext.day}`;
       if (lastDynamicDateKey && currentKey !== lastDynamicDateKey && state.weatherData) {
+        state.matrixHistoryCache = {};
         generateHistoricalDataForCity(state.currentCity);
         renderHistoricalWeatherViews();
         renderMonthlyArchive();
@@ -4062,7 +4168,7 @@
     }
 
     // 基于当前城市地理维度与气候演变模型生成过去15年历史气象数据 (2012 - 2026)
-    function generateHistoricalDataForCity(city) {
+    function generateHistoricalDataForCity(city, updateGlobalState = true) {
       const dateContext = getCurrentDateContext();
       const lastDataYear = Math.max(2026, dateContext.year);
       const lat = city.latitude || 39.9;
@@ -4231,7 +4337,7 @@
       const baselineMonthlyAvg = monthlyBaselineSum.map(v => Math.round((v / 15) * 10) / 10);
       const fifteenYearMean = Math.round((fifteenYearSummary.reduce((acc, cur) => acc + cur.avgTemp, 0) / 15) * 10) / 10;
 
-      state.historicalData = {
+      const generatedData = {
         cityName: city.name,
         years,
         baselineMonthlyAvg,
@@ -4240,6 +4346,8 @@
         tenYearSummary: fifteenYearSummary,
         fifteenYearSummary
       };
+      if (updateGlobalState) state.historicalData = generatedData;
+      return generatedData;
     }
 
     // 渲染历史概览核心指标
@@ -4418,41 +4526,208 @@
       });
     }
 
-    // 辅助获取目标月份在过去 3 年的历史数据 (支持在完整 15 年中精准追溯)
-    function getPast3YearsMonthData(monthNum, key, selYear) {
-      if (!state.historicalData || !state.historicalData.years) return [];
-      const pastYears = [];
-      for (let offset = 1; offset <= 3; offset++) {
-        const targetY = selYear - offset;
-        if (state.historicalData.years[targetY]) {
-          const mData = state.historicalData.years[targetY].months[monthNum - 1];
-          if (mData && mData[key] !== null && mData[key] !== undefined) {
-            pastYears.push({
-              year: targetY,
-              val: mData[key],
-              totalDays: mData.activeDaysCount || 30
+    // 每张矩阵独立使用自己的城市与历史数据缓存，不相互覆盖主天气页或其他矩阵的选择。
+    function getMatrixHistoricalData(matrixKey) {
+      const city = state.matrixCitySelections[matrixKey] || state.currentCity;
+      const cacheKey = `${matrixKey}|${city.name}|${Number(city.latitude).toFixed(4)}|${Number(city.longitude).toFixed(4)}`;
+      if (!state.matrixHistoryCache[cacheKey]) {
+        state.matrixHistoryCache[cacheKey] = generateHistoricalDataForCity(city, false);
+      }
+      return state.matrixHistoryCache[cacheKey];
+    }
+
+    function setMatrixCity(matrixKey, city) {
+      if (!city || !Number.isFinite(Number(city.latitude)) || !Number.isFinite(Number(city.longitude))) return;
+      state.matrixCitySelections[matrixKey] = {
+        name: city.name,
+        country: city.country || city.admin1 || '中国',
+        latitude: Number(city.latitude),
+        longitude: Number(city.longitude),
+        tier: city.tier || ''
+      };
+      const cachePrefix = `${matrixKey}|`;
+      Object.keys(state.matrixHistoryCache).forEach(key => {
+        if (key.startsWith(cachePrefix) && !key.startsWith(`${cachePrefix}${city.name}|`)) delete state.matrixHistoryCache[key];
+      });
+      const input = document.getElementById(`${matrixKey === 'status' ? 'status' : matrixKey === 'temperature' ? 'temperature' : 'precip'}MatrixCityInput`);
+      const dropdown = document.getElementById(`${matrixKey === 'status' ? 'status' : matrixKey === 'temperature' ? 'temperature' : 'precip'}MatrixCityDropdown`);
+      if (input) input.value = city.name;
+      if (dropdown) dropdown.classList.add('hidden');
+      if (matrixKey === 'status') renderWeatherStatusMatrix();
+      else if (matrixKey === 'temperature') renderTemperatureTierHeatmap();
+      else renderMonthlyPrecipComparisonMatrix();
+      showToast(`已切换【${city.name}】${matrixKey === 'status' ? '天气状态矩阵' : matrixKey === 'temperature' ? '气温区间矩阵' : '五年气象矩阵'}`, 'info');
+    }
+
+    function setupMatrixCitySelectors() {
+      const configurations = [
+        { key: 'status', inputId: 'statusMatrixCityInput', dropdownId: 'statusMatrixCityDropdown' },
+        { key: 'temperature', inputId: 'temperatureMatrixCityInput', dropdownId: 'temperatureMatrixCityDropdown' },
+        { key: 'precipitation', inputId: 'precipMatrixCityInput', dropdownId: 'precipMatrixCityDropdown' }
+      ];
+      configurations.forEach(config => {
+        const input = document.getElementById(config.inputId);
+        const dropdown = document.getElementById(config.dropdownId);
+        if (!input || !dropdown) return;
+        const selected = state.matrixCitySelections[config.key];
+        input.value = selected.name;
+        let debounceTimer = null;
+        let requestVersion = 0;
+
+        const showResults = (cities, query) => {
+          dropdown.innerHTML = '';
+          const unique = [];
+          cities.forEach(city => {
+            if (!Number.isFinite(Number(city.latitude)) || !Number.isFinite(Number(city.longitude))) return;
+            const same = unique.some(item => item.name === city.name || (Math.abs(Number(item.latitude) - Number(city.latitude)) < .08 && Math.abs(Number(item.longitude) - Number(city.longitude)) < .08));
+            if (!same) unique.push(city);
+          });
+          if (!unique.length) {
+            const empty = document.createElement('div');
+            empty.className = 'px-3 py-3 text-xs text-white/60';
+            empty.textContent = query ? `未找到“${query}”，可尝试完整城市名或拼音` : '暂无城市';
+            dropdown.appendChild(empty);
+          } else {
+            unique.slice(0, 12).forEach(city => {
+              const option = document.createElement('button');
+              option.type = 'button';
+              option.className = 'matrix-city-option';
+              option.setAttribute('role', 'option');
+              const name = document.createElement('span');
+              name.textContent = city.name;
+              const meta = document.createElement('span');
+              meta.className = 'matrix-city-tier';
+              meta.textContent = [city.tier || '在线检索', city.country || city.admin1 || '中国'].filter(Boolean).join(' · ');
+              option.append(name, meta);
+              option.addEventListener('click', () => setMatrixCity(config.key, city));
+              dropdown.appendChild(option);
             });
+          }
+          dropdown.classList.remove('hidden');
+        };
+
+        const search = async (query) => {
+          const version = ++requestVersion;
+          const q = (query || '').trim();
+          const allCities = typeof TIER_CITIES !== 'undefined' ? TIER_CITIES : HOT_CITIES;
+          if (!q) {
+            showResults(allCities.slice(0, 12), '');
+            return;
+          }
+          const lowerQ = q.toLowerCase();
+          const local = allCities.filter(city =>
+            String(city.name || '').toLowerCase().includes(lowerQ) ||
+            String(city.country || '').toLowerCase().includes(lowerQ) ||
+            String(city.tier || '').toLowerCase().includes(lowerQ)
+          );
+          let remote = [];
+          try {
+            const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=10&language=zh&format=json`);
+            if (response.ok) {
+              const json = await response.json();
+              remote = (json.results || []).map(result => ({
+                name: result.name,
+                country: result.country || result.admin1 || '在线地理编码',
+                latitude: result.latitude,
+                longitude: result.longitude,
+                tier: '在线检索'
+              }));
+            }
+          } catch (e) { /* 网络不可用时仍显示本地三线城市库 */ }
+          if (version !== requestVersion) return;
+          const countryFirst = remote.filter(city => /china|中国/i.test(String(city.country || '') + ' ' + String(city.admin1 || '')));
+          showResults([...local, ...countryFirst, ...remote], q);
+        };
+
+        input.addEventListener('focus', () => {
+          if (!input.value.trim()) search('');
+          else search(input.value.trim());
+        });
+        input.addEventListener('input', () => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => search(input.value), 220);
+        });
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            const exact = TIER_CITIES.find(city => city.name === input.value.trim());
+            if (exact) setMatrixCity(config.key, exact);
+            else search(input.value.trim());
+          } else if (event.key === 'Escape') dropdown.classList.add('hidden');
+        });
+        document.addEventListener('click', event => {
+          if (!dropdown.contains(event.target) && event.target !== input) dropdown.classList.add('hidden');
+        });
+      });
+
+      // 指标按钮只影响五年矩阵；城市选择和指标选择彼此独立。
+      document.querySelectorAll('[data-precip-metric]').forEach(button => {
+        button.addEventListener('click', () => {
+          const metric = button.getAttribute('data-precip-metric');
+          if (!['maxTemp', 'minTemp', 'precip'].includes(metric)) return;
+          state.precipMatrixMetric = metric;
+          document.querySelectorAll('[data-precip-metric]').forEach(btn => {
+            const active = btn.getAttribute('data-precip-metric') === metric;
+            btn.className = `precip-metric-btn px-3 py-1.5 rounded-lg ${active ? 'active' : 'text-white/70'}`;
+            btn.setAttribute('aria-pressed', String(active));
+          });
+          renderMonthlyPrecipComparisonMatrix();
+        });
+      });
+      document.querySelectorAll('[data-precip-metric]').forEach(btn => btn.setAttribute('aria-pressed', String(btn.getAttribute('data-precip-metric') === state.precipMatrixMetric)));
+    }
+
+    // 辅助获取目标月份在过去 N 年的历史数据 (支持在完整 15 年中精准追溯)
+    function getPast3YearsMonthData(monthNum, key, selYear, historyData = state.historicalData, yearsCount = 3) {
+      if (!historyData || !historyData.years) return [];
+      const pastYears = [];
+      for (let offset = 1; offset <= yearsCount; offset++) {
+        const targetY = selYear - offset;
+        if (historyData.years[targetY]) {
+          const mData = historyData.years[targetY].months[monthNum - 1];
+          if (mData && mData[key] !== null && mData[key] !== undefined) {
+            pastYears.push({ year: targetY, val: mData[key], totalDays: mData.activeDaysCount || 30 });
           }
         }
       }
-
-      if (pastYears.length < 3) {
-        for (let y = Math.max(2026, getCurrentDateContext().year); y >= 2012 && pastYears.length < 3; y--) {
+      if (pastYears.length < yearsCount) {
+        for (let y = Math.max(2026, getCurrentDateContext().year); y >= 2012 && pastYears.length < yearsCount; y--) {
           if (y !== selYear && !pastYears.some(p => p.year === y)) {
-            const mData = state.historicalData.years[y]?.months[monthNum - 1];
+            const mData = historyData.years[y]?.months[monthNum - 1];
             if (mData && mData[key] !== null && mData[key] !== undefined) {
-              pastYears.push({
-                year: y,
-                val: mData[key],
-                totalDays: mData.activeDaysCount || 30
-              });
+              pastYears.push({ year: y, val: mData[key], totalDays: mData.activeDaysCount || 30 });
             }
           }
         }
         pastYears.sort((a, b) => b.year - a.year);
       }
-
       return pastYears;
+    }
+
+    // 同月同比：完成月份对比上年同月；进行中月份按已观测天数校准上年基准。
+    function getMonthlyMatrixYoY(monthData, metricKey, selectedYear, historyData) {
+      if (!monthData || monthData.status === 'pending' || !historyData || !historyData.years) return null;
+      const previousYear = historyData.years[selectedYear - 1];
+      const previousMonth = previousYear && previousYear.months ? previousYear.months[monthData.month - 1] : null;
+      if (!previousMonth || previousMonth.status === 'pending') return null;
+      const currentValue = Number(monthData[metricKey]);
+      const previousRaw = Number(previousMonth[metricKey]);
+      if (!Number.isFinite(currentValue) || !Number.isFinite(previousRaw)) return null;
+      let previousComparable = previousRaw;
+      if (monthData.status === 'ongoing') {
+        const elapsedDays = Math.max(0, Number(monthData.activeDaysCount || 0));
+        const previousDays = Math.max(1, Number(previousMonth.daysInMonth || 30));
+        previousComparable = Math.round(previousRaw * elapsedDays / previousDays);
+      }
+      const delta = currentValue - previousComparable;
+      const visualText = delta > 0 ? `+${delta}` : (delta < 0 ? `${delta}` : '');
+      return {
+        delta,
+        visualText,
+        tooltipText: delta === 0
+          ? `与上年同期基准持平（${previousComparable} 天）`
+          : `同比${delta > 0 ? '增加' : '减少'} ${Math.abs(delta)} 天；上年同期基准 ${previousComparable} 天${monthData.status === 'ongoing' ? `（上年同月已按本月已走完的 ${monthData.activeDaysCount} 天折算）` : ''}`
+      };
     }
 
     // 矩阵浮层 Tooltip 定位与交互管理
@@ -4514,14 +4789,16 @@
     // 渲染选定年份月度天气状态分布矩阵图
     function renderWeatherStatusMatrix() {
       const container = document.getElementById('weatherStatusMatrixContainer');
-      if (!container || !state.historicalData) return;
+      if (!container) return;
+      const matrixHistoryData = getMatrixHistoricalData('status');
+      if (!matrixHistoryData) return;
 
       const selYear = state.histSelectedYear;
       const dateContext = getCurrentDateContext();
-      const yearData = state.historicalData.years[selYear];
+      const yearData = matrixHistoryData.years[selYear];
       if (!yearData) return;
 
-      const cityName = state.currentCity.name;
+      const cityName = state.matrixCitySelections.status.name;
       const titleCityEl = document.getElementById('statusMatrixCityText');
       if (titleCityEl) titleCityEl.textContent = cityName;
 
@@ -4623,8 +4900,11 @@
         `;
 
         yearData.months.forEach(m => {
-          const pastYearsData = getPast3YearsMonthData(m.month, row.key, selYear);
+          const pastYearsData = getPast3YearsMonthData(m.month, row.key, selYear, matrixHistoryData, 3);
           const avg3Year = pastYearsData.length > 0 ? (pastYearsData.reduce((acc, c) => acc + c.val, 0) / pastYearsData.length).toFixed(1) : 0;
+          const yoy = getMonthlyMatrixYoY(m, row.key, selYear, matrixHistoryData);
+          const yoyLabel = m.status !== 'pending' && yoy && yoy.delta !== 0 ? `<span class="block mt-1 text-[9px] font-bold ${yoy.delta > 0 ? 'text-emerald-100' : 'text-rose-100'}">${yoy.visualText}</span>` : '';
+          const yoyTooltip = yoy && yoy.delta !== 0 ? yoy.tooltipText : '';
 
           if (m.status === 'pending') {
             html += `
@@ -4638,6 +4918,7 @@
                   data-badge="${row.badgeText}"
                   data-badgeclass="${row.badgeClass}"
                   data-current="未走完 (待观测)"
+                  data-yoy="${yoyTooltip}"
                   data-past='${JSON.stringify(pastYearsData)}'
                   data-avg="${avg3Year}">
                   --
@@ -4662,10 +4943,12 @@
                   data-badgeclass="${row.badgeClass}"
                   data-current="${daysVal} 天${m.status === 'ongoing' ? ` (实测${m.activeDaysCount}天)` : ''}"
                   data-ratio="${Math.round((daysVal / Math.max(1, m.activeDaysCount)) * 100)}%"
+                  data-yoy="${yoyTooltip}"
                   data-past='${JSON.stringify(pastYearsData)}'
                   data-avg="${avg3Year}">
                   <span class="text-xs font-black tracking-tight">${daysVal}天</span>
                   ${ongoingText}
+                  ${yoyLabel}
                 </div>
               </td>
             `;
@@ -4710,14 +4993,16 @@
     // 渲染各月份气温区间分布热力矩阵图（支持日最高温 / 日最低温切换）
     function renderTemperatureTierHeatmap() {
       const container = document.getElementById('temperatureTierMatrixContainer');
-      if (!container || !state.historicalData) return;
+      if (!container) return;
+      const matrixHistoryData = getMatrixHistoricalData('temperature');
+      if (!matrixHistoryData) return;
 
       const selYear = state.histSelectedYear;
-      const yearData = state.historicalData.years[selYear];
+      const yearData = matrixHistoryData.years[selYear];
       if (!yearData) return;
 
       const dateContext = getCurrentDateContext();
-      const cityName = state.currentCity.name;
+      const cityName = state.matrixCitySelections.temperature.name;
       const mode = state.temperatureTierMode === 'min' ? 'min' : 'max';
       const dimensionLabel = mode === 'max' ? '日最高温' : '日最低温';
       const matrixCityText = document.getElementById('matrixCityText');
@@ -4817,10 +5102,13 @@
         `;
 
         yearData.months.forEach(m => {
-          const pastYearsData = getPast3YearsMonthData(m.month, tier.key, selYear);
+          const pastYearsData = getPast3YearsMonthData(m.month, tier.key, selYear, matrixHistoryData, 3);
           const avg3Year = pastYearsData.length > 0
             ? (pastYearsData.reduce((acc, c) => acc + c.val, 0) / pastYearsData.length).toFixed(1)
             : '0.0';
+          const yoy = getMonthlyMatrixYoY(m, tier.key, selYear, matrixHistoryData);
+          const yoyLabel = m.status !== 'pending' && yoy && yoy.delta !== 0 ? `<span class="block mt-1 text-[9px] font-bold ${yoy.delta > 0 ? 'text-white' : 'text-rose-100'}">${yoy.visualText}</span>` : '';
+          const yoyTooltip = yoy && yoy.delta !== 0 ? yoy.tooltipText : '';
 
           if (m.status === 'pending') {
             html += `
@@ -4835,6 +5123,7 @@
                   data-badge="${tier.badgeText}"
                   data-badgeclass="${tier.badgeClass}"
                   data-current="未走完 (待观测)"
+                  data-yoy="${yoyTooltip}"
                   data-past='${JSON.stringify(pastYearsData)}'
                   data-avg="${avg3Year}"
                   data-unit=" 天">
@@ -4862,11 +5151,13 @@
                   data-badgeclass="${tier.badgeClass}"
                   data-current="${daysVal} 天${m.status === 'ongoing' ? ` (实测${m.activeDaysCount}天)` : ''}"
                   data-ratio="${ratio}%"
+                  data-yoy="${yoyTooltip}"
                   data-past='${JSON.stringify(pastYearsData)}'
                   data-avg="${avg3Year}"
                   data-unit=" 天">
                   <span class="text-xs font-black tracking-tight">${daysVal}天</span>
                   ${ongoingText}
+                  ${yoyLabel}
                 </div>
               </td>
             `;
@@ -4928,7 +5219,9 @@
           const badgeClass = cell.dataset.badgeclass;
           const currentText = cell.dataset.current;
           const ratio = cell.dataset.ratio ? `(占全月 ${cell.dataset.ratio})` : '';
+          const yoyText = cell.dataset.yoy || '';
           const avg = cell.dataset.avg || '0';
+          const avgLabel = cell.dataset.avglabel || (type === 'precip' ? '同期均值' : '3 年历史同期均值');
           const unit = cell.dataset.unit || ' 天';
           let past = [];
 
@@ -4948,6 +5241,13 @@
                   <div class="text-[10px] text-white/50 mt-0.5">${p.totalDays ? `${Math.round((p.val / p.totalDays) * 100)}%` : '--'}</div>
                 </div>
               `).join('')}</div>`;
+            } else if (type === 'precip') {
+              pastListHtml = past.map(p => `
+                <div class="flex items-center justify-between py-1 border-b border-white/5 last:border-0">
+                  <span class="text-white/70">${p.year}年同期:</span>
+                  <span class="font-bold text-white">${p.val}${unit}</span>
+                </div>
+              `).join('');
             } else {
               pastListHtml = past.map(p => `
                 <div class="flex items-center justify-between py-1 border-b border-white/5 last:border-0">
@@ -4978,16 +5278,17 @@
                 </div>
               </div>
 
+              ${yoyText ? `<div class="mb-2 flex items-start justify-between gap-3 rounded-lg bg-white/5 border border-white/10 px-2 py-1.5 text-[10px]"><span class="text-white/55 shrink-0">同比变化</span><span class="text-white/90 font-semibold text-right">${yoyText}</span></div>` : ''}
               <div class="border-t border-white/10 pt-2">
                 <div class="text-[11px] font-semibold text-sky-200 mb-1 flex items-center gap-1.5">
                   <i class="fa-solid fa-clock-rotate-left text-[10px]"></i>
-                  <span>过去 3 年历史同期数据对照:</span>
+                  <span>${type === 'precip' ? `历史同期数据对照（${Math.min(5, past.length + 1)}年）:` : '过去 3 年历史同期数据对照:'}</span>
                 </div>
                 <div class="space-y-0.5">
                   ${pastListHtml}
                 </div>
                 <div class="mt-2 pt-1.5 border-t border-white/10 flex items-center justify-between text-[10px] text-white/60 font-medium">
-                  <span>3 年历史同期均值:</span>
+                  <span>${avgLabel}:</span>
                   <span class="font-bold text-white">${avg}${unit}</span>
                 </div>
               </div>
@@ -5007,174 +5308,123 @@
       });
     }
 
-    // 渲染年月度降水量的最近3年对比分布矩阵图
+    // 最近 5 年（默认 2022—2026）月度天气矩阵，可切换最高温、最低温与月降水量。
     function renderMonthlyPrecipComparisonMatrix() {
       const container = document.getElementById('monthlyPrecipMatrixContainer');
-      if (!container || !state.historicalData) return;
-
-      const selYear = state.histSelectedYear;
-      const cityName = state.currentCity.name;
+      if (!container) return;
+      const matrixHistoryData = getMatrixHistoricalData('precipitation');
+      if (!matrixHistoryData) return;
+      const selectedYear = state.histSelectedYear;
+      const cityName = state.matrixCitySelections.precipitation.name;
+      const metric = state.precipMatrixMetric || 'precip';
+      const metricConfig = {
+        precip: { key: 'precipMm', title: '月度降水量', unit: 'mm', annualLabel: '年度总降水', meanLabel: '同期均值（按有效年份）', decimals: 0 },
+        maxTemp: { key: 'maxTemp', title: '月度最高温', unit: '°C', annualLabel: '年均最高温', meanLabel: '同期均值（按有效年份）', decimals: 1 },
+        minTemp: { key: 'minTemp', title: '月度最低温', unit: '°C', annualLabel: '年均最低温', meanLabel: '同期均值（按有效年份）', decimals: 1 }
+      }[metric] || { key: 'precipMm', title: '月度降水量', unit: 'mm', annualLabel: '年度总降水', meanLabel: '同期均值（按有效年份）', decimals: 0 };
 
       const titleCityEl = document.getElementById('precipMatrixCityText');
       if (titleCityEl) titleCityEl.textContent = cityName;
+      const metricTitleEl = document.getElementById('precipMatrixMetricTitle');
+      if (metricTitleEl) metricTitleEl.textContent = metricConfig.title;
+      const notice = document.getElementById('precipMatrixNotice');
+      if (notice) notice.textContent = metric === 'precip'
+        ? '最近 5 年逐月降水量（mm）对比；悬停查看同月历史值与五年同期均值。'
+        : `最近 5 年逐月${metricConfig.title}（°C）对比；悬停查看同月历史值与五年同期均值。`;
+      const legend = document.getElementById('monthlyPrecipLegend');
+      if (legend) {
+        legend.innerHTML = metric === 'precip'
+          ? '<span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-sky-600 border border-sky-300"></span>≥ 120mm 汛期多雨</span><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-sky-500"></span>60 - 120mm 充沛湿润</span><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-cyan-500"></span>20 - 60mm 适中平稳</span><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-blue-400/30"></span>&lt; 20mm 偏少干燥</span>'
+          : '<span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-rose-500"></span>≥ 30°C 高温</span><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-amber-400"></span>20 - 30°C 温暖</span><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-emerald-400"></span>10 - 20°C 凉爽</span><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-sky-400"></span>0 - 10°C 寒凉</span><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded bg-blue-600"></span>&lt; 0°C 冰冻</span>';
+      }
+      document.querySelectorAll('[data-precip-metric]').forEach(btn => {
+        const active = btn.getAttribute('data-precip-metric') === metric;
+        btn.className = `precip-metric-btn px-3 py-1.5 rounded-lg ${active ? 'active' : 'text-white/70'}`;
+        btn.setAttribute('aria-pressed', String(active));
+      });
 
-      const compareYears = [selYear, selYear - 1, selYear - 2].filter(y => y >= 2012);
-      if (compareYears.length < 3) {
-        for (let y = Math.max(2026, getCurrentDateContext().year); y >= 2012 && compareYears.length < 3; y--) {
-          if (!compareYears.includes(y)) compareYears.push(y);
+      const compareYears = [];
+      for (let year = selectedYear; year > selectedYear - 5; year--) {
+        if (matrixHistoryData.years[year]) compareYears.push(year);
+      }
+      if (compareYears.length < 5) {
+        for (let year = Math.max(2026, getCurrentDateContext().year); year >= 2012 && compareYears.length < 5; year--) {
+          if (!compareYears.includes(year) && matrixHistoryData.years[year]) compareYears.push(year);
         }
         compareYears.sort((a, b) => b - a);
       }
-
       const yearsLabel = document.getElementById('precipMatrixYearsText');
-      if (yearsLabel) {
-        yearsLabel.textContent = `${Math.min(...compareYears)} - ${Math.max(...compareYears)}`;
+      if (yearsLabel) yearsLabel.textContent = compareYears.length ? `${Math.min(...compareYears)} - ${Math.max(...compareYears)}` : '暂无数据';
+
+      function getMetricStyle(value, status) {
+        if (status === 'pending') return 'background: rgba(255,255,255,0.02); color: rgba(255,255,255,0.3); border: 1px dashed rgba(255,255,255,0.2);';
+        if (metric === 'precip') {
+          if (value >= 120) return 'background: rgba(2,132,199,.95); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5); font-weight:800; border:1px solid rgba(56,189,248,.4);';
+          if (value >= 60) return 'background: rgba(14,165,233,.78); color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.4); font-weight:700;';
+          if (value >= 20) return 'background: rgba(6,182,212,.56); color:#fff; font-weight:700;';
+          return 'background: rgba(96,165,250,.22); color:rgba(255,255,255,.9);';
+        }
+        if (value >= 30) return 'background: rgba(244,63,94,.88); color:#fff; font-weight:800;';
+        if (value >= 20) return 'background: rgba(245,158,11,.84); color:#fff; font-weight:800;';
+        if (value >= 10) return 'background: rgba(16,185,129,.78); color:#fff; font-weight:700;';
+        if (value >= 0) return 'background: rgba(14,165,233,.65); color:#fff; font-weight:700;';
+        return 'background: rgba(37,99,235,.88); color:#fff; font-weight:800;';
+      }
+      function displayValue(value) {
+        if (value === null || value === undefined || value === '' || !Number.isFinite(Number(value))) return '—';
+        return metric === 'precip' ? String(Math.round(Number(value))) : Number(value).toFixed(1);
       }
 
-      function getPrecipStyle(precip, status) {
-        if (status === 'pending') {
-          return 'background: rgba(255,255,255,0.02); color: rgba(255,255,255,0.3); border: 1px dashed rgba(255,255,255,0.2);';
-        }
-        if (precip >= 120) {
-          return 'background: rgba(2, 132, 199, 0.95); color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-weight: 800; border: 1px solid rgba(56, 189, 248, 0.4);';
-        }
-        if (precip >= 60) {
-          return 'background: rgba(14, 165, 233, 0.75); color: #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.5); font-weight: 700;';
-        }
-        if (precip >= 20) {
-          return 'background: rgba(6, 182, 212, 0.55); color: #ffffff; font-weight: 600;';
-        }
-        return 'background: rgba(96, 165, 250, 0.22); color: rgba(255,255,255,0.85);';
-      }
-
-      const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-      let html = `
-        <table class="w-full text-left border-collapse min-w-[760px]">
-          <thead>
-            <tr class="border-b border-white/15 text-xs text-white/60">
-              <th class="py-2.5 px-3 font-semibold w-36 text-left">自然年份</th>
-      `;
-
-      months.forEach(m => {
-        html += `<th class="py-2.5 px-2 text-center font-bold text-xs">${m}月</th>`;
-      });
-
-      html += `
-              <th class="py-2.5 px-3 text-center font-bold text-cyan-300 text-xs w-28">年度总降水</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-white/10 text-xs">
-      `;
-
+      const months = Array.from({ length: 12 }, (_, i) => i + 1);
       const monthlySums = new Array(12).fill(0);
       const monthlyCounts = new Array(12).fill(0);
+      let html = `<table class="w-full text-left border-collapse min-w-[760px]"><thead><tr class="border-b border-white/15 text-xs text-white/60"><th class="py-2.5 px-3 font-semibold w-36 text-left">自然年份</th>`;
+      months.forEach(month => { html += `<th class="py-2.5 px-2 text-center font-bold text-xs">${month}月</th>`; });
+      html += `<th class="py-2.5 px-3 text-center font-bold text-cyan-300 text-xs w-28">${metricConfig.annualLabel}</th></tr></thead><tbody class="divide-y divide-white/10 text-xs">`;
 
       compareYears.forEach(year => {
-        const yearObj = state.historicalData.years[year];
-        let yearTotalPrecip = 0;
-
-        html += `
-          <tr class="hover:bg-white/5 transition duration-150">
-            <td class="py-3 px-3 font-extrabold text-white flex items-center gap-1.5">
-              <span class="w-2 h-2 rounded-full ${year === selYear ? 'bg-amber-400' : 'bg-cyan-400'}"></span>
-              <span>${year} 年</span>
-              ${year === selYear ? '<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30">基准</span>' : ''}
-            </td>
-        `;
-
-        months.forEach((m, idx) => {
-          const mData = yearObj ? yearObj.months[idx] : null;
-          const status = mData ? mData.status : 'completed';
-          const precip = mData && mData.precipMm !== null && mData.precipMm !== undefined ? mData.precipMm : 0;
-          const style = getPrecipStyle(precip, status);
-
-          if (status !== 'pending') {
-            yearTotalPrecip += precip;
-            monthlySums[idx] += precip;
+        const yearData = matrixHistoryData.years[year];
+        let annualAgg = 0;
+        let annualCount = 0;
+        html += `<tr class="hover:bg-white/5 transition duration-150"><td class="py-3 px-3 font-extrabold text-white"><span class="inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full ${year === selectedYear ? 'bg-amber-400' : 'bg-cyan-400'}"></span><span>${year}年</span></span>${year === selectedYear ? '<span class="block mt-1 text-[9px] px-1.5 py-0.5 w-fit rounded bg-amber-500/20 text-amber-300 border border-amber-400/30">基准</span>' : ''}</td>`;
+        months.forEach((month, idx) => {
+          const monthData = yearData ? yearData.months[idx] : null;
+          const status = monthData ? monthData.status : 'pending';
+          const value = monthData && monthData[metricConfig.key] !== null && monthData[metricConfig.key] !== undefined ? Number(monthData[metricConfig.key]) : null;
+          const pending = status === 'pending' || !Number.isFinite(value);
+          const style = getMetricStyle(value == null ? 0 : value, pending ? 'pending' : status);
+          if (!pending) {
+            if (metric === 'precip') annualAgg += value;
+            else { annualAgg += value; annualCount++; }
+            monthlySums[idx] += value;
             monthlyCounts[idx]++;
           }
-
-          const pastYearsData = getPast3YearsMonthData(m, 'precipMm', year);
-          const avg3Year = pastYearsData.length > 0 ? (pastYearsData.reduce((acc, c) => acc + c.val, 0) / pastYearsData.length).toFixed(1) : precip;
-
-          if (status === 'pending') {
-            html += `
-              <td class="p-1.5 text-center">
-                <div class="matrix-cell-interactive w-full py-2 rounded-lg text-[11px] font-medium cursor-pointer transition"
-                  style="${style}"
-                  data-city="${cityName}"
-                  data-year="${year}"
-                  data-month="${m}月"
-                  data-type="precip"
-                  data-title="降水量观测对比"
-                  data-badge="待观测"
-                  data-badgeclass="bg-rose-500/20 text-rose-300 border border-rose-400/30"
-                  data-current="未走完 (待观测)"
-                  data-past='${JSON.stringify(pastYearsData)}'
-                  data-avg="${avg3Year}"
-                  data-unit=" mm">
-                  --
-                </div>
-              </td>
-            `;
+          const previousData = getPast3YearsMonthData(month, metricConfig.key, year, matrixHistoryData, 4);
+          const averageFive = previousData.length ? ((previousData.reduce((sum, item) => sum + Number(item.val || 0), 0) + (pending ? 0 : value)) / (previousData.length + (pending ? 0 : 1))) : value;
+          const averageLabel = pending ? `${previousData.length}年已观测同期均值` : '五年同期均值';
+          const cellTitle = `${cityName} · ${year}年${month}月 · ${metricConfig.title}：${pending ? '待观测' : `${displayValue(value)} ${metricConfig.unit}`} · ${averageLabel}：${Number.isFinite(averageFive) ? displayValue(averageFive) : '—'} ${metricConfig.unit}`;
+          const pastJson = JSON.stringify(previousData).replace(/'/g, '&#39;');
+          if (pending) {
+            html += `<td class="p-1.5 text-center"><div class="matrix-cell-interactive w-full py-2 rounded-lg text-[11px] font-medium cursor-pointer transition" style="${style}" title="${cellTitle}" data-city="${cityName}" data-year="${year}" data-month="${month}月" data-type="precip" data-title="${metricConfig.title}" data-badge="待观测" data-badgeclass="bg-rose-500/20 text-rose-300 border border-rose-400/30" data-current="未走完（待观测）" data-past='${pastJson}' data-avg="${Number.isFinite(averageFive) ? averageFive : 0}" data-avglabel="${averageLabel}" data-unit=" ${metricConfig.unit}">—</div></td>`;
           } else {
-            html += `
-              <td class="p-1.5 text-center">
-                <div class="matrix-cell-interactive w-full py-2 rounded-lg text-[11px] font-bold cursor-pointer transition hover:scale-105 hover:ring-2 hover:ring-cyan-300 shadow-sm flex flex-col items-center justify-center"
-                  style="${style}"
-                  data-city="${cityName}"
-                  data-year="${year}"
-                  data-month="${m}月"
-                  data-type="precip"
-                  data-title="月度降水量"
-                  data-badge="${precip >= 120 ? '汛期' : (precip >= 60 ? '充沛' : (precip >= 20 ? '适中' : '干燥'))}"
-                  data-badgeclass="${precip >= 60 ? 'bg-sky-500/20 text-sky-300 border-sky-400/30' : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/30'}"
-                  data-current="${precip} mm"
-                  data-past='${JSON.stringify(pastYearsData)}'
-                  data-avg="${avg3Year}"
-                  data-unit=" mm">
-                  <span>${precip}</span>
-                  <span class="text-[9px] opacity-75 font-normal">mm</span>
-                </div>
-              </td>
-            `;
+            const badge = metric === 'precip' ? (value >= 120 ? '汛期' : value >= 60 ? '充沛' : value >= 20 ? '适中' : '干燥') : (value >= 30 ? '高温' : value >= 20 ? '温暖' : value >= 10 ? '凉爽' : value >= 0 ? '寒凉' : '冰冻');
+            html += `<td class="p-1.5 text-center"><div class="matrix-cell-interactive w-full py-2 rounded-lg text-[11px] font-bold cursor-pointer transition hover:scale-105 hover:ring-2 hover:ring-cyan-300 shadow-sm flex flex-col items-center justify-center" style="${style}" title="${cellTitle}" data-city="${cityName}" data-year="${year}" data-month="${month}月" data-type="precip" data-title="${metricConfig.title}" data-badge="${badge}" data-badgeclass="bg-cyan-500/20 text-cyan-300 border-cyan-400/30" data-current="${displayValue(value)} ${metricConfig.unit}" data-past='${pastJson}' data-avg="${Number.isFinite(averageFive) ? averageFive : 0}" data-avglabel="${averageLabel}" data-unit=" ${metricConfig.unit}"><span>${displayValue(value)}</span><span class="text-[9px] opacity-75 font-normal">${metricConfig.unit}</span></div></td>`;
           }
         });
-
-        html += `
-            <td class="py-3 px-3 text-center font-extrabold text-cyan-300 text-sm">
-              ${yearTotalPrecip} <span class="text-[10px] text-white/50 font-normal">mm</span>
-            </td>
-          </tr>
-        `;
+        const annualValue = metric === 'precip' ? annualAgg : (annualCount ? annualAgg / annualCount : null);
+        html += `<td class="py-3 px-3 text-center font-extrabold text-cyan-300 text-sm">${displayValue(annualValue)} <span class="text-[10px] text-white/50 font-normal">${metricConfig.unit}</span></td></tr>`;
       });
 
-      html += `
-          <tr class="bg-white/5 border-t border-white/15 text-[11px]">
-            <td class="py-2.5 px-3 font-bold text-amber-300 flex items-center gap-1">
-              <i class="fa-solid fa-calculator text-[10px]"></i> 3年同期均值
-            </td>
-      `;
-
-      let totalAvgSum = 0;
-      months.forEach((m, idx) => {
-        const count = monthlyCounts[idx] || 1;
-        const avg = Math.round(monthlySums[idx] / count);
-        totalAvgSum += avg;
-        html += `
-          <td class="py-2.5 px-1.5 text-center font-semibold text-white/80">
-            ${avg}<span class="text-[9px] text-white/40">mm</span>
-          </td>
-        `;
+      html += `<tr class="bg-white/5 border-t border-white/15 text-[11px]"><td class="py-2.5 px-3 font-bold text-amber-300"><i class="fa-solid fa-calculator text-[10px] mr-1"></i>${metricConfig.meanLabel}</td>`;
+      let totalMeanAgg = 0; let totalMeanCount = 0;
+      months.forEach((month, idx) => {
+        const count = monthlyCounts[idx];
+        const mean = count ? monthlySums[idx] / count : null;
+        if (Number.isFinite(mean)) { if (metric === 'precip') totalMeanAgg += mean; else { totalMeanAgg += mean; totalMeanCount++; } }
+        html += `<td class="py-2.5 px-1.5 text-center font-semibold text-white/80">${displayValue(mean)}<span class="text-[9px] text-white/40">${metricConfig.unit}</span></td>`;
       });
-
-      html += `
-            <td class="py-2.5 px-3 text-center font-bold text-amber-300">${totalAvgSum} mm</td>
-          </tr>
-        </tbody>
-      </table>
-      `;
-
+      const meanTotal = metric === 'precip' ? totalMeanAgg : (totalMeanCount ? totalMeanAgg / totalMeanCount : null);
+      html += `<td class="py-2.5 px-3 text-center font-bold text-amber-300">${displayValue(meanTotal)} ${metricConfig.unit}</td></tr></tbody></table>`;
       container.innerHTML = html;
       bindMatrixHoverEvents(container);
     }
@@ -6149,6 +6399,36 @@
       const ctx = canvas.getContext('2d');
       state.monthlyArchive.chartInstance = new Chart(ctx, {
         type: 'bar',
+        plugins: [{
+          id: 'monthlyArchiveTemperaturePointLabels',
+          afterDatasetsDraw(chart) {
+            const drawCtx = chart.ctx;
+            const area = chart.chartArea;
+            if (!area) return;
+            [
+              { datasetIndex: 0, color: '#fbbf24', offsetY: -10 },
+              { datasetIndex: 1, color: '#7dd3fc', offsetY: 13 }
+            ].forEach(config => {
+              const dataset = chart.data.datasets[config.datasetIndex];
+              const meta = chart.getDatasetMeta(config.datasetIndex);
+              if (!dataset || !meta || !meta.data) return;
+              meta.data.forEach((point, index) => {
+                const value = dataset.data[index];
+                if (!point || point.skip || value === null || value === undefined || !Number.isFinite(Number(value))) return;
+                const x = point.x;
+                const y = Math.max(area.top + 9, Math.min(area.bottom - 7, point.y + config.offsetY));
+                const label = `${Math.round(Number(value))}°`;
+                drawCtx.save();
+                drawCtx.font = '800 9px sans-serif';
+                drawCtx.textAlign = 'center'; drawCtx.textBaseline = 'middle'; drawCtx.lineJoin = 'round';
+                drawCtx.shadowColor = 'rgba(2,6,23,.9)'; drawCtx.shadowBlur = 4; drawCtx.shadowOffsetY = 1;
+                drawCtx.lineWidth = 3.5; drawCtx.strokeStyle = 'rgba(15,23,42,.96)'; drawCtx.strokeText(label, x, y);
+                drawCtx.shadowBlur = 0; drawCtx.shadowOffsetY = 0; drawCtx.fillStyle = config.color; drawCtx.fillText(label, x, y);
+                drawCtx.restore();
+              });
+            });
+          }
+        }],
         data: {
           labels,
           datasets: [
@@ -6313,20 +6593,24 @@
       const yearSelect = document.getElementById('monthlyArchiveYearSelect');
       const monthSelect = document.getElementById('monthlyArchiveMonthSelect');
 
+      // 默认档案选择广州 · 2025 年 11 月；控件值与页面状态保持同步。
+      if (cityInput) cityInput.value = state.monthlyArchive.city;
+
       let monthlySearchDebounceTimer = null;
 
       if (tierSelect) {
         tierSelect.innerHTML = '';
         const defaultOpt = document.createElement('option');
         defaultOpt.value = '';
-        defaultOpt.textContent = '-- 一线/新一线/二线 --';
+        defaultOpt.textContent = '-- 一线/新一线/二线/三线 --';
         defaultOpt.className = 'bg-slate-900 text-white/50';
         tierSelect.appendChild(defaultOpt);
 
         const tierGroups = [
           { name: '一线城市', key: '一线', colorClass: 'text-rose-300 font-bold' },
           { name: '新一线城市', key: '新一线', colorClass: 'text-amber-300 font-bold' },
-          { name: '二线城市', key: '二线', colorClass: 'text-sky-300 font-bold' }
+          { name: '二线城市', key: '二线', colorClass: 'text-sky-300 font-bold' },
+          { name: '三线及扩展城市', key: '三线', colorClass: 'text-indigo-300 font-bold' }
         ];
 
         const sourceCities = typeof TIER_CITIES !== 'undefined' ? TIER_CITIES : HOT_CITIES;
@@ -6366,7 +6650,7 @@
 
         const header = document.createElement('div');
         header.className = 'px-3.5 py-2 text-[11px] font-bold text-white/60 bg-white/5 flex items-center justify-between';
-        header.innerHTML = `<span><i class="fa-solid fa-fire text-rose-400 mr-1"></i>快捷选择一线/新一线/二线:</span><span class="text-[10px] text-white/40">或直接输入搜索</span>`;
+        header.innerHTML = `<span><i class="fa-solid fa-fire text-rose-400 mr-1"></i>快捷选择一线/新一线/二线/三线:</span><span class="text-[10px] text-white/40">或直接输入搜索</span>`;
         cityDropdown.appendChild(header);
 
         const listContainer = document.createElement('div');
@@ -6375,7 +6659,8 @@
         const tierConfigs = [
           { tier: '一线', label: '一线', bg: 'bg-rose-500/20 text-rose-300 border-rose-400/30' },
           { tier: '新一线', label: '新一线', bg: 'bg-amber-500/20 text-amber-300 border-amber-400/30' },
-          { tier: '二线', label: '二线', bg: 'bg-sky-500/20 text-sky-300 border-sky-400/30' }
+          { tier: '二线', label: '二线', bg: 'bg-sky-500/20 text-sky-300 border-sky-400/30' },
+          { tier: '三线', label: '三线/扩展', bg: 'bg-indigo-500/20 text-indigo-300 border-indigo-400/30' }
         ];
 
         const sourceCities = typeof TIER_CITIES !== 'undefined' ? TIER_CITIES : HOT_CITIES;
@@ -6422,7 +6707,7 @@
 
         let remoteResults = [];
         try {
-          const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=zh&format=json`);
+          const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=10&language=zh&format=json`);
           if (res.ok) {
             const json = await res.json();
             if (json.results && json.results.length > 0) {
@@ -6450,7 +6735,7 @@
           return;
         }
 
-        merged.slice(0, 7).forEach(c => {
+        merged.slice(0, 10).forEach(c => {
           const item = document.createElement('div');
           item.className = 'px-3.5 py-2 hover:bg-white/20 cursor-pointer flex items-center justify-between text-xs transition text-white';
           item.innerHTML = `
@@ -6633,6 +6918,10 @@
     function setupHistoricalControls() {
       const yearSelect = document.getElementById('histYearSelect');
       const compYearSelect = document.getElementById('histCompareYearSelect');
+      if (yearSelect) yearSelect.value = String(state.histSelectedYear);
+      if (compYearSelect) compYearSelect.value = String(state.histCompareYear);
+      const initialCompareTag = document.getElementById('histCompareYearTag');
+      if (initialCompareTag) initialCompareTag.textContent = String(state.histCompareYear);
 
       if (yearSelect) {
         yearSelect.addEventListener('change', (e) => {
@@ -6765,7 +7054,7 @@
       );
 
       try {
-        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=6&language=zh&format=json`);
+        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=zh&format=json`);
         let remoteResults = [];
         if (res.ok) {
           const json = await res.json();
@@ -6801,7 +7090,7 @@
         return;
       }
 
-      results.slice(0, 6).forEach(city => {
+      results.slice(0, 10).forEach(city => {
         const item = document.createElement('div');
         item.className = 'px-4 py-2.5 hover:bg-white/20 cursor-pointer flex items-center justify-between text-sm transition';
         item.innerHTML = `
@@ -6847,6 +7136,7 @@
         let badgeColor = 'bg-rose-500/20 text-rose-300';
         if (city.tier === '新一线') badgeColor = 'bg-amber-500/20 text-amber-300';
         if (city.tier === '二线') badgeColor = 'bg-sky-500/20 text-sky-300';
+        if (city.tier === '三线') badgeColor = 'bg-indigo-500/20 text-indigo-300';
 
         btn.className = 'px-3 py-1.5 rounded-xl text-xs font-medium glass-pill hover:bg-white/30 active:scale-95 transition whitespace-nowrap flex items-center gap-1.5 shrink-0';
         btn.innerHTML = `
@@ -6867,7 +7157,8 @@
         { id: 'tierFilterAll', val: 'all' },
         { id: 'tierFilterT1', val: '一线' },
         { id: 'tierFilterNewT1', val: '新一线' },
-        { id: 'tierFilterT2', val: '二线' }
+        { id: 'tierFilterT2', val: '二线' },
+        { id: 'tierFilterT3', val: '三线' }
       ];
 
       filters.forEach(({ id, val }) => {
@@ -7143,6 +7434,7 @@
       initChinaTemperatureHeatMap();
       setupHistoricalControls();
       setupTemperatureTierControls();
+      setupMatrixCitySelectors();
       setupMonthlyArchiveControls();
       setupArchiveMonthlyMapControls();
       setupRegionForecastControls();
