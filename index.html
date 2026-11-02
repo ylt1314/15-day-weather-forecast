@@ -66,6 +66,17 @@
                   linear-gradient(135deg, #090d16 0%, #1e1b4b 50%, #020617 100%);
     }
 
+    /* 未来N天天气趋势图：参考浅色商务气象图表样式 */
+    .forecast-trend-chart-card {
+      background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 52%, #e8f2fc 100%);
+      border: 1px solid rgba(203, 213, 225, 0.82);
+      box-shadow: 0 16px 38px rgba(30, 64, 100, 0.10), inset 0 1px 0 rgba(255,255,255,0.95);
+      color: #1e293b;
+    }
+    .forecast-trend-chart-card h3 { color: #243b5a; }
+    .forecast-trend-chart-card h3 i { color: #e8a15c; }
+    .forecast-trend-chart-card > div:first-child > span { color: #64748b; }
+
     /* 毛玻璃质感组件 */
     .glass-card {
       background: rgba(255, 255, 255, 0.12);
@@ -766,12 +777,12 @@
       </div>
 
       <!-- 折线图展示卡片 -->
-      <div class="glass-card rounded-3xl p-6">
+      <div id="forecastTrendChartCard" class="forecast-trend-chart-card rounded-3xl p-6">
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-semibold text-white/80 flex items-center gap-2">
-            <i class="fa-solid fa-chart-line text-amber-400"></i> 未来 <span id="chartRangeTitle">15</span> 天气温起伏曲线图 (双折线平滑走势)
+          <h3 class="text-sm font-semibold flex items-center gap-2">
+            <i class="fa-solid fa-chart-line"></i> 未来 <span id="chartRangeTitle">15</span> 天气温起伏曲线图 (双折线平滑走势)
           </h3>
-          <span class="text-xs text-white/50">单位: <span class="chartUnitLabel">°C</span></span>
+          <span class="text-xs">单位: <span class="chartUnitLabel">°C</span></span>
         </div>
         <div class="w-full h-64 sm:h-72 relative">
           <canvas id="trendChart"></canvas>
@@ -3969,12 +3980,14 @@
 
       const ctx = canvas.getContext('2d');
       const maxGradient = ctx.createLinearGradient(0, 0, 0, 260);
-      maxGradient.addColorStop(0, 'rgba(245, 158, 11, 0.45)');
-      maxGradient.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
+      maxGradient.addColorStop(0, 'rgba(246, 151, 105, 0.38)');
+      maxGradient.addColorStop(0.62, 'rgba(246, 151, 105, 0.16)');
+      maxGradient.addColorStop(1, 'rgba(246, 151, 105, 0.015)');
 
       const minGradient = ctx.createLinearGradient(0, 0, 0, 260);
-      minGradient.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
-      minGradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+      minGradient.addColorStop(0, 'rgba(48, 145, 211, 0.34)');
+      minGradient.addColorStop(0.62, 'rgba(48, 145, 211, 0.15)');
+      minGradient.addColorStop(1, 'rgba(48, 145, 211, 0.015)');
 
       const trendDataLabelsPlugin = {
         id: 'trendDataLabelsPlugin',
@@ -3993,10 +4006,12 @@
               const val = dataset.data[index];
               if (val !== null && val !== undefined) {
                 const yPos = isMax ? point.y - 10 : point.y + 16;
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-                ctx.fillText(`${val}°`, point.x + 0.5, yPos + 0.5);
-
-                ctx.fillStyle = isMax ? '#fbbf24' : '#38bdf8';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.96)';
+                ctx.lineWidth = 3.2;
+                ctx.lineJoin = 'round';
+                ctx.strokeText(`${val}°`, point.x, yPos);
+                ctx.fillStyle = '#24364f';
                 ctx.fillText(`${val}°`, point.x, yPos);
               }
             });
@@ -4013,28 +4028,28 @@
             {
               label: '最高气温',
               data: maxTemps,
-              borderColor: '#f59e0b',
+              borderColor: '#f19369',
               backgroundColor: maxGradient,
               fill: true,
               tension: 0.38,
               borderWidth: 2.8,
               pointRadius: state.currentRange > 15 ? 3 : 4.5,
               pointHoverRadius: 6,
-              pointBackgroundColor: '#f59e0b',
+              pointBackgroundColor: '#f3a06f',
               pointBorderColor: '#ffffff',
               pointBorderWidth: 1.5
             },
             {
               label: '最低气温',
               data: minTemps,
-              borderColor: '#38bdf8',
+              borderColor: '#2996d6',
               backgroundColor: minGradient,
               fill: true,
               tension: 0.38,
               borderWidth: 2.8,
               pointRadius: state.currentRange > 15 ? 3 : 4.5,
               pointHoverRadius: 6,
-              pointBackgroundColor: '#38bdf8',
+              pointBackgroundColor: '#2996d6',
               pointBorderColor: '#ffffff',
               pointBorderWidth: 1.5
             }
@@ -4063,10 +4078,10 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: 'rgba(15, 23, 42, 0.88)',
-              titleColor: '#ffffff',
-              bodyColor: '#e2e8f0',
-              borderColor: 'rgba(255, 255, 255, 0.25)',
+              backgroundColor: 'rgba(255, 255, 255, 0.97)',
+              titleColor: '#1e293b',
+              bodyColor: '#334155',
+              borderColor: 'rgba(148, 163, 184, 0.38)',
               borderWidth: 1,
               padding: 10,
               cornerRadius: 12,
@@ -4079,18 +4094,18 @@
             x: {
               grid: { display: false },
               ticks: {
-                color: 'rgba(255, 255, 255, 0.65)',
-                font: { size: 11 },
+                color: '#475569',
+                font: { size: 11, weight: '600' },
                 maxRotation: state.currentRange > 15 ? 45 : 0,
                 autoSkip: true,
                 maxTicksLimit: state.currentRange > 15 ? 15 : 10
               }
             },
             y: {
-              grid: { color: 'rgba(255, 255, 255, 0.1)' },
+              grid: { color: 'rgba(100, 116, 139, 0.16)', drawBorder: false },
               ticks: {
-                color: 'rgba(255, 255, 255, 0.65)',
-                font: { size: 11 },
+                color: '#475569',
+                font: { size: 11, weight: '600' },
                 callback: (v) => `${v}°`
               }
             }
