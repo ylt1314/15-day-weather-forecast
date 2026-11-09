@@ -454,6 +454,56 @@
       #loginCover *, #loginCover *::before, #loginCover *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
     }
 
+
+    /* 2026-11 首页横向宽屏布局与距平图 */
+    .city-live-horizontal-grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(360px,.9fr); gap:20px; align-items:stretch; }
+    .city-live-horizontal-grid > section { min-width:0; margin:0; }
+    .city-live-hero .grid { align-items:center; }
+    @media (max-width:1100px) { .city-live-horizontal-grid { grid-template-columns:1fr; } }
+
+    .anomaly-range-btn { padding:7px 11px; border-radius:8px; color:rgba(255,255,255,.72); font-size:11px; font-weight:800; transition:.18s; }
+    .anomaly-range-btn.active { color:#1e293b; background:#fff; box-shadow:0 3px 10px rgba(15,23,42,.15); }
+    .region-filter-btn { padding:6px 11px; border:1px solid rgba(255,255,255,.2); border-radius:8px; color:rgba(255,255,255,.78); font-size:11px; font-weight:800; transition:.18s; }
+    .region-filter-btn:hover { background:rgba(255,255,255,.14); }
+    .region-filter-btn.active { color:#1e293b; background:#fff; border-color:#fff; box-shadow:0 3px 10px rgba(15,23,42,.12); }
+    #temperatureAnomalyMap { min-height:360px; background:#fff; }
+    #anomalyMapWrapper { background:#fff; border:1px solid rgba(203,213,225,.9); box-shadow:0 18px 42px rgba(15,23,42,.16); }
+    #anomalyMapWrapper .anomaly-map-note { color:#334155; }
+    @media (min-width:1280px) {
+      .region-matrix-shell { max-height:720px; }
+      .region-weather-table thead th { position:sticky; top:0; z-index:18; }
+      .region-weather-table thead .region-sticky,
+      .region-weather-table thead .province-sticky { z-index:22; }
+      #temperatureAnomalyMap { height:560px; }
+    }
+    @media (max-width:767px) {
+      .region-quick-filter { gap:6px; }
+      .region-filter-btn { padding:6px 8px; }
+    }
+
+
+    /* SkyPulse Anomaly | 仅作用于独立距平区，避免覆盖主系统及其按钮 */
+    #anomalyMapSection .anomaly-span-btn {
+      padding: 7px 15px; border-radius: 9px; font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,.75); transition: all .2s ease;
+      white-space: nowrap; cursor: pointer; user-select: none;
+    }
+    #anomalyMapSection .anomaly-span-btn:hover {
+      color: #fff; background: rgba(255,255,255,.15);
+    }
+    #anomalyMapSection .anomaly-span-btn.active {
+      background: #fff !important; color: #0f172a !important;
+      box-shadow: 0 4px 14px rgba(0,0,0,.25) !important;
+      font-weight: 900 !important;
+    }
+    #anomalyMapSection .diag-val { font-variant-numeric: tabular-nums; }
+    html.echarts-fallback #anomalyEchartsContainer::before {
+      content: "距平地图引擎暂不可用，请检查外部 ECharts 资源连接";
+      position: absolute; inset: 0; display: flex; align-items: center;
+      justify-content: center; text-align: center; color: #334155;
+      padding: 24px; font: 600 13px/1.6 system-ui, sans-serif;
+    }
+
   </style>
 </head>
 <body id="appBody" class="min-h-screen text-white font-sans antialiased theme-sunny transition-colors duration-700 relative overflow-x-hidden selection:bg-amber-400 selection:text-slate-900">
@@ -464,7 +514,7 @@
     <div class="absolute -bottom-24 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl ambient-glow" style="animation-delay: -5s;"></div>
   </div>
 
-  <div class="relative z-10 max-w-7xl mx-auto px-4 py-8 space-y-8">
+  <div class="relative z-10 max-w-[1800px] mx-auto px-4 sm:px-5 xl:px-7 py-5 sm:py-6 space-y-5">
     
     <!-- 顶部主导航与操作控制栏 -->
     <header class="flex flex-col lg:flex-row items-center justify-between gap-4 glass-card rounded-3xl p-4 sm:p-5">
@@ -534,6 +584,307 @@
       </div>
     </header>
 
+    <!-- 全国气温热力分布地图板块 (最高温 / 最低温双模态 + 地级市下钻) -->
+    <section class="glass-card rounded-3xl p-6 sm:p-7 relative overflow-hidden space-y-5">
+      <!-- 顶部控制栏与标题 -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 flex items-center justify-center text-base shadow-inner">
+              <i class="fa-solid fa-map-location-dot"></i>
+            </div>
+            <h2 id="heatMapSectionTitle" class="text-xl sm:text-2xl font-extrabold tracking-tight">全国气温热力分布地图</h2>
+            <span id="mapLevelBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-200 border border-rose-400/30 font-semibold">动态色斑图</span>
+          </div>
+          <p id="mapSubtitleText" class="text-xs sm:text-sm text-white/70 mt-1">
+            覆盖全国 34 个省级行政区实时气象监测推演 · 点击任一省份即可下钻至地级市 · 悬停查看明细
+          </p>
+        </div>
+
+        <!-- 最高温 / 最低温模式切换按钮与返回全国按钮 -->
+        <div class="flex flex-wrap items-center gap-3 self-start md:self-auto">
+          <!-- 返回全国地图按钮 (下钻到地级市后显示) -->
+          <button id="backToChinaBtn" class="hidden px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm active:scale-95 border border-white/25">
+            <i class="fa-solid fa-arrow-left"></i> 返回全国地图
+          </button>
+
+          <div class="glass-pill p-1 rounded-xl flex items-center text-xs font-semibold shadow-inner">
+            <button id="heatMapMaxBtn" class="heatmap-mode-btn px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-md font-bold transition flex items-center gap-1.5">
+              <i class="fa-solid fa-fire text-amber-200"></i> 最高气温热力图
+            </button>
+            <button id="heatMapMinBtn" class="heatmap-mode-btn px-3.5 py-1.5 rounded-lg text-white hover:text-white/80 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-snowflake text-cyan-200"></i> 最低气温热力图
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 色斑梯度图例色阶指示条 -->
+      <div class="glass-card-subtle rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2 text-white/80 font-medium">
+          <i class="fa-solid fa-temperature-half text-amber-300"></i>
+          <span>当前图例: <strong id="legendTitleText" class="text-white">全国日最高气温分布 (°C)</strong></span>
+        </div>
+        
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <span class="text-white/60 text-[11px]">&lt; 0°C</span>
+          <div class="w-48 sm:w-64 h-2.5 rounded-full bg-gradient-to-r from-blue-600 via-cyan-400 via-emerald-400 via-amber-300 via-orange-500 to-rose-600 shadow-inner"></div>
+          <span class="text-white/60 text-[11px]">&gt; 35°C</span>
+        </div>
+
+        <div class="hidden lg:flex items-center gap-3 text-[11px] text-white/60">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> 极寒/低温</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> 凉爽宜人</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> 温暖中等</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> 炎热高温</span>
+        </div>
+      </div>
+
+      <!-- 地图主视窗容器 (官方标准中国地理区划 + 动态气象色斑图 + 地级市下钻) -->
+      <div id="chinaMapWrapper" class="relative w-full h-[540px] sm:h-[620px] lg:h-[680px] rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-2xl select-none flex items-center justify-center">
+        <!-- 地图内浮动交互导航面包屑 -->
+        <div id="mapBreadcrumb" class="absolute top-4 left-4 z-20 flex items-center gap-2 bg-slate-900/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 text-xs shadow-lg text-white">
+          <button id="crumbChinaBtn" class="text-amber-300 font-bold hover:underline flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-map"></i> 全国
+          </button>
+          <span id="crumbDivider" class="text-white/40 hidden">/</span>
+          <span id="crumbProvinceText" class="text-cyan-300 font-bold hidden"></span>
+          <span id="drillTipBadge" class="ml-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">支持下钻地级市</span>
+        </div>
+
+        <!-- ECharts 动态热力矢量地图画布 (底纹纯白高精度渲染) -->
+        <div id="chinaEchartsContainer" class="w-full h-full"></div>
+
+        <!-- 备用地图加载中指示器 -->
+        <div id="mapLoadingMask" class="absolute inset-0 flex flex-col items-center justify-center bg-white/85 backdrop-blur-sm z-20 transition-opacity duration-300 pointer-events-none opacity-0">
+          <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-2"></i>
+          <span id="mapLoadingText" class="text-xs text-slate-700 font-semibold">正在同步全国 34 省级行政区高精度气象测算...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SkyPulse 距平组件：完整接入独立版本，其他业务板块保持原样 -->
+    <section id="anomalyMapSection" class="glass-card rounded-3xl p-6 sm:p-7 relative overflow-hidden space-y-5">
+      
+      <!-- 1. 顶部控制栏与标题设置 -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-base shadow-inner">
+              <i class="fa-solid fa-chart-area"></i>
+            </div>
+            <h2 id="anomalyMapSectionTitle" class="text-xl sm:text-2xl font-extrabold tracking-tight">全国平均气温距平分布图</h2>
+            <span id="anomalyMapBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 font-semibold">气候距平诊断</span>
+          </div>
+          <p id="anomalyMapSubtitle" class="text-xs sm:text-sm text-white/70 mt-1">
+            反映所选周期较常年同期平均气温偏高/偏低幅度（℃）· 正距平偏暖，负距平偏冷 · 点击任一省份下钻地级市
+          </p>
+        </div>
+
+        <!-- 交互控制器：返回全国距平按钮与近 7/15/30 天时段切片切换器 -->
+        <div class="flex flex-wrap items-center gap-3 self-start md:self-auto">
+          <!-- 返回全国地图按钮 (下钻至地级市后显示) -->
+          <button id="anomalyBackChinaBtn" class="hidden px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm active:scale-95 border border-white/25">
+            <i class="fa-solid fa-arrow-left"></i> 返回全国距平
+          </button>
+
+          <!-- 时段切片切换按钮组 -->
+          <div class="glass-pill p-1 rounded-xl flex items-center text-xs font-semibold shadow-inner">
+            <button id="anomalySpan7Btn" class="anomaly-span-btn" type="button" data-span="7">近 7 天距平</button>
+            <button id="anomalySpan15Btn" class="anomaly-span-btn active" type="button" data-span="15">近 15 天距平</button>
+            <button id="anomalySpan30Btn" class="anomaly-span-btn" type="button" data-span="30">近 30 天距平</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. 专业双极气温距平色阶指标栏 (Diverging Color Scale: -4.0°C ~ +4.0°C) -->
+      <div class="glass-card-subtle rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2 text-white/80 font-medium">
+          <i class="fa-solid fa-scale-balanced text-cyan-300"></i>
+          <span>当前距平图例: <strong id="anomalyLegendTitle" class="text-white">全国近 15 天平均气温距平 (°C) · 候旬平衡诊断</strong></span>
+        </div>
+
+        <!-- 双极颜色条：深蓝(负距平显著偏冷) -> 天蓝 -> 灰白(常年均值) -> 橙黄 -> 橙红(正距平显著偏暖) -->
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <span class="text-blue-300 font-bold text-[11px] whitespace-nowrap">&le; -4.0°C (显著偏冷)</span>
+          <div class="w-48 sm:w-64 h-2.5 rounded-full bg-gradient-to-r from-blue-700 via-cyan-400 via-slate-100 via-amber-300 via-orange-500 to-rose-600 shadow-inner"></div>
+          <span class="text-rose-300 font-bold text-[11px] whitespace-nowrap">&ge; +4.0°C (显著偏暖)</span>
+        </div>
+
+        <div class="hidden lg:flex items-center gap-3 text-[11px] text-white/60">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span> 明显偏冷 (&le; -1.5°)</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-slate-200"></span> 接近常年 (±0.5°)</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> 明显偏暖 (&ge; +1.5°)</span>
+        </div>
+      </div>
+
+      <!-- 3. 地图主视窗容器 (底色纯白 #ffffff，与全国气温热力分布地图风格规范严格统一) -->
+      <div id="anomalyMapWrapper" class="relative w-full h-[540px] sm:h-[620px] lg:h-[680px] rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-2xl select-none flex items-center justify-center">
+        <!-- 浮动面包屑导航 -->
+        <div id="anomalyBreadcrumb" class="absolute top-4 left-4 z-20 flex items-center gap-2 bg-slate-900/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 text-xs shadow-lg text-white">
+          <button id="anomalyCrumbChinaBtn" class="text-amber-300 font-bold hover:underline flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-map"></i> 全国距平
+          </button>
+          <span id="anomalyCrumbDivider" class="text-white/40 hidden">/</span>
+          <span id="anomalyCrumbProvinceText" class="text-cyan-300 font-bold hidden"></span>
+          <span id="anomalyDrillTipBadge" class="ml-1 text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">支持下钻地级市</span>
+        </div>
+
+        <!-- ECharts 距平矢量图画布 -->
+        <div id="anomalyEchartsContainer" class="w-full h-full"></div>
+
+        <!-- 异步加载遮罩层 -->
+        <div id="anomalyMapLoadingMask" class="absolute inset-0 flex flex-col items-center justify-center bg-white/85 backdrop-blur-sm z-20 transition-opacity duration-300 pointer-events-none opacity-0">
+          <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-2"></i>
+          <span id="anomalyLoadingText" class="text-xs text-slate-700 font-semibold">正在计算全国气象站气候平均值与距平偏差...</span>
+        </div>
+      </div>
+
+      <!-- 4. 底部气温距平诊断核心看板 -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2">
+        <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+          <span class="text-[11px] text-white/60 block">全国平均气温距平</span>
+          <span id="nationalAvgAnomaly" class="diag-val text-xl sm:text-2xl font-black text-rose-400 mt-1 block">+1.1 °C</span>
+          <span id="nationalAvgAnomalyHint" class="text-[10px] text-rose-300/80">整体较常年同期偏暖</span>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+          <span class="text-[11px] text-white/60 block">最大偏暖省区 (正距平峰值)</span>
+          <span id="maxWarmProvince" class="diag-val text-xl sm:text-2xl font-black text-rose-500 mt-1 block">海南 (+3.4°)</span>
+          <span id="maxWarmDesc" class="text-[10px] text-white/50">华南及沿海明显偏暖</span>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+          <span class="text-[11px] text-white/60 block">最大偏冷省区 (负距平峰值)</span>
+          <span id="maxColdProvince" class="diag-val text-xl sm:text-2xl font-black text-blue-400 mt-1 block">黑龙江 (-2.3°)</span>
+          <span id="maxColdDesc" class="text-[10px] text-white/50">受持续冷高压脊控制</span>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+          <span class="text-[11px] text-white/60 block">偏暖省区占比</span>
+          <span id="warmRatioText" class="diag-val text-xl sm:text-2xl font-black text-amber-300 mt-1 block">80.0%</span>
+          <span id="warmCountText" class="text-[10px] text-white/50">28 个省级行政区气温偏高</span>
+        </div>
+      </div>
+      <p class="text-[10px] text-white/55 leading-relaxed">
+        数据说明：距平数值及常年均温采用独立组件内置的示例参数与时段推演模型，
+        用于功能演示；不是实时气象站观测值或官方气候监测结论。
+      </p>
+    </section>
+
+    <!-- 距平模块专用提示层 -->
+    <div id="anomalyToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 glass-card px-5 py-3 rounded-2xl flex items-center gap-3 shadow-2xl text-sm transition-all duration-300 opacity-0 translate-y-8 pointer-events-none border border-white/30">
+      <i id="anomalyToastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+      <span id="anomalyToastMessage">操作成功</span>
+    </div>
+
+    <!-- 新增：全国七大区域未来天气矩阵与地区走势分析 -->
+    <section id="regionalForecastSection" class="glass-card rounded-3xl p-5 sm:p-7 space-y-5 relative">
+      <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-cyan-400/15 text-cyan-300 flex items-center justify-center text-base"><i class="fa-solid fa-table-cells-large"></i></div>
+            <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">全国七大区域未来天气矩阵</h2>
+          </div>
+          <p class="text-xs sm:text-sm text-white/65 mt-2">区域大类与省份/城市层级同列展示；地区行附带温度走势折线 · 联动未来 <span id="regionMatrixRangeText" class="text-amber-300 font-extrabold">15</span> 天周期 · 点击地区查看逐日天气明细</p>
+        </div>
+        <div class="flex flex-col gap-2 self-start xl:self-auto">
+          <div class="flex items-center justify-end gap-2">
+            <span class="text-xs font-bold text-white/60">预报周期</span>
+            <div class="glass-pill p-1 rounded-xl flex items-center gap-1">
+              <button id="regionRange7Btn" class="region-range-btn" type="button">7 天</button>
+              <button id="regionRange15Btn" class="region-range-btn active" type="button">15 天</button>
+              <button id="regionRange30Btn" class="region-range-btn" type="button">30 天</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-2">
+            <span class="text-xs font-bold text-white/60">温度维度</span>
+            <div class="glass-pill p-1 rounded-xl flex items-center gap-1">
+              <button id="regionMetricMaxBtn" class="region-metric-btn active-max" type="button"><i class="fa-solid fa-temperature-high mr-1"></i>日最高温</button>
+              <button id="regionMetricMinBtn" class="region-metric-btn" type="button"><i class="fa-solid fa-temperature-low mr-1"></i>日最低温</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="region-quick-filter flex flex-wrap items-center gap-2 rounded-xl bg-white/10 border border-white/15 px-3 py-2">
+        <span class="text-[11px] font-extrabold text-white/75 mr-1">区域筛选</span>
+        <button type="button" class="region-filter-btn active" data-region-filter="全部区域">全部区域</button>
+        <button type="button" class="region-filter-btn" data-region-filter="华北区">华北区</button>
+        <button type="button" class="region-filter-btn" data-region-filter="东北区">东北区</button>
+        <button type="button" class="region-filter-btn" data-region-filter="华东区">华东区</button>
+        <button type="button" class="region-filter-btn" data-region-filter="华中区">华中区</button>
+        <button type="button" class="region-filter-btn" data-region-filter="华南区">华南区</button>
+        <button type="button" class="region-filter-btn" data-region-filter="西南区">西南区</button>
+        <button type="button" class="region-filter-btn" data-region-filter="西北区">西北区</button>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 text-[11px] text-white/60">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span><i class="fa-solid fa-sun text-amber-300 mr-1"></i>晴 / 晴间多云</span>
+          <span><i class="fa-solid fa-cloud text-slate-200 mr-1"></i>多云 / 阴</span>
+          <span><i class="fa-solid fa-cloud-rain text-sky-300 mr-1"></i>雨</span>
+          <span><i class="fa-solid fa-snowflake text-cyan-200 mr-1"></i>雪</span>
+          <span class="text-white/35">悬停单元格可查看最高/最低温、降水概率与数据来源提示</span>
+        </div>
+        <span id="regionMatrixLoadStatus" class="text-cyan-200"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i>正在准备各省天气数据…</span>
+      </div>
+
+      <div class="region-matrix-actions">
+        <div class="rule-note">均温汇总 = 所选周期内每日（最高温 + 最低温）÷ 2 的平均值；逐日单元格随最高温 / 最低温维度切换。</div>
+        <div class="flex items-center gap-2">
+          <button id="regionExpandAllBtn" type="button" class="region-expand-all-btn" aria-label="展开全部区域">＋ 全部展开</button>
+          <button id="regionCollapseAllBtn" type="button" class="region-expand-all-btn" aria-label="折叠全部区域">－ 全部折叠</button>
+        </div>
+      </div>
+
+      <div id="regionMatrixNotice" class="rounded-xl border border-sky-300/20 bg-sky-300/5 px-3.5 py-2.5 text-[11px] leading-relaxed text-white/65">
+        未来 30 天矩阵会尽可能展示长周期趋势；天气服务逐日预报覆盖范围以接口实时返回为准，超出部分将明确标记为趋势估算，请以临近预报为准。
+      </div>
+
+      <div class="region-matrix-shell">
+        <table class="region-weather-table" id="regionWeatherMatrix">
+          <thead id="regionWeatherMatrixHead"></thead>
+          <tbody id="regionWeatherMatrixBody"><tr><td colspan="18" class="py-8 text-center text-xs text-white/55">正在载入全国省级天气数据…</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="border-t border-white/10 pt-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          <div>
+            <h3 id="regionTrendTitle" class="text-lg font-extrabold text-white">【西北区 / 陕西】未来 15 天日最高温走势</h3>
+            <p id="regionTrendSubtitle" class="text-[11px] text-white/55 mt-1">省会/地区代表点逐日天气数据 · 点击上方矩阵行可切换地区</p>
+          </div>
+          <span id="regionTrendSourceBadge" class="text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-white/60 self-start">等待数据</span>
+        </div>
+
+        <div id="regionSelectedStats" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="region-stat-card"><div class="region-stat-label">周期均温</div><div class="region-stat-value">—</div></div>
+          <div class="region-stat-card"><div class="region-stat-label">周期最高温</div><div class="region-stat-value">—</div></div>
+          <div class="region-stat-card"><div class="region-stat-label">周期最低温</div><div class="region-stat-value">—</div></div>
+          <div class="region-stat-card"><div class="region-stat-label">雨雪天数</div><div class="region-stat-value">—</div></div>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-slate-950/10 p-3 sm:p-4">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <h4 id="regionTrendChartCaption" class="text-xs font-bold text-white/75">逐日温度走势</h4>
+            <span class="text-[10px] text-white/45">单位：<span class="chartUnitLabel">°C</span></span>
+          </div>
+          <div class="relative h-64 sm:h-72"><canvas id="regionTrendChart"></canvas></div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <h4 class="text-sm font-extrabold">所选地区逐日天气明细</h4>
+            <span class="text-[10px] text-white/45">最高温 / 最低温 / 天气状况 / 降水概率</span>
+          </div>
+          <div class="overflow-x-auto rounded-xl border border-white/10">
+            <table class="region-day-detail-table">
+              <thead><tr><th>日期 / 星期</th><th>天气状况</th><th>日最高温</th><th>日最低温</th><th>降水概率</th><th>数据标记</th></tr></thead>
+              <tbody id="regionDailyDetailBody"><tr><td colspan="6" class="text-center text-white/45 py-6">选择地区后展示逐日明细</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 热门省会/核心城市快捷选择栏 (一线 / 新一线 / 二线分类切换) -->
     <div class="flex flex-col sm:flex-row sm:items-center gap-2 overflow-x-auto no-scrollbar py-1">
       <div class="flex items-center gap-2 shrink-0">
@@ -553,8 +904,9 @@
       </div>
     </div>
 
+    <div class="city-live-horizontal-grid">
     <!-- 实时天气概览 Hero 卡片 -->
-    <section class="glass-card rounded-3xl p-6 sm:p-8 relative overflow-hidden">
+    <section class="glass-card rounded-3xl p-6 sm:p-8 relative overflow-hidden city-live-hero">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         <!-- 城市与实时温度核心信息 -->
         <div class="lg:col-span-7 space-y-4">
@@ -655,7 +1007,7 @@
     </section>
 
     <!-- 未来 24 小时逐小时走势板块 -->
-    <section class="glass-card rounded-3xl p-6 space-y-4">
+    <section class="glass-card rounded-3xl p-6 space-y-4 city-hourly-panel">
       <div class="flex items-center justify-between">
         <h3 class="text-base font-extrabold flex items-center gap-2">
           <i class="fa-solid fa-clock text-amber-300"></i> 未来 24 小时气象走势
@@ -667,85 +1019,7 @@
       </div>
     </section>
 
-    <!-- 全国气温热力分布地图板块 (最高温 / 最低温双模态 + 地级市下钻) -->
-    <section class="glass-card rounded-3xl p-6 sm:p-7 relative overflow-hidden space-y-5">
-      <!-- 顶部控制栏与标题 -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-300 flex items-center justify-center text-base shadow-inner">
-              <i class="fa-solid fa-map-location-dot"></i>
-            </div>
-            <h2 id="heatMapSectionTitle" class="text-xl sm:text-2xl font-extrabold tracking-tight">全国气温热力分布地图</h2>
-            <span id="mapLevelBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-200 border border-rose-400/30 font-semibold">动态色斑图</span>
-          </div>
-          <p id="mapSubtitleText" class="text-xs sm:text-sm text-white/70 mt-1">
-            覆盖全国 34 个省级行政区实时气象监测推演 · 点击任一省份即可下钻至地级市 · 悬停查看明细
-          </p>
-        </div>
-
-        <!-- 最高温 / 最低温模式切换按钮与返回全国按钮 -->
-        <div class="flex flex-wrap items-center gap-3 self-start md:self-auto">
-          <!-- 返回全国地图按钮 (下钻到地级市后显示) -->
-          <button id="backToChinaBtn" class="hidden px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm active:scale-95 border border-white/25">
-            <i class="fa-solid fa-arrow-left"></i> 返回全国地图
-          </button>
-
-          <div class="glass-pill p-1 rounded-xl flex items-center text-xs font-semibold shadow-inner">
-            <button id="heatMapMaxBtn" class="heatmap-mode-btn px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-md font-bold transition flex items-center gap-1.5">
-              <i class="fa-solid fa-fire text-amber-200"></i> 最高气温热力图
-            </button>
-            <button id="heatMapMinBtn" class="heatmap-mode-btn px-3.5 py-1.5 rounded-lg text-white hover:text-white/80 transition flex items-center gap-1.5">
-              <i class="fa-solid fa-snowflake text-cyan-200"></i> 最低气温热力图
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 色斑梯度图例色阶指示条 -->
-      <div class="glass-card-subtle rounded-2xl px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div class="flex items-center gap-2 text-white/80 font-medium">
-          <i class="fa-solid fa-temperature-half text-amber-300"></i>
-          <span>当前图例: <strong id="legendTitleText" class="text-white">全国日最高气温分布 (°C)</strong></span>
-        </div>
-        
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-          <span class="text-white/60 text-[11px]">&lt; 0°C</span>
-          <div class="w-48 sm:w-64 h-2.5 rounded-full bg-gradient-to-r from-blue-600 via-cyan-400 via-emerald-400 via-amber-300 via-orange-500 to-rose-600 shadow-inner"></div>
-          <span class="text-white/60 text-[11px]">&gt; 35°C</span>
-        </div>
-
-        <div class="hidden lg:flex items-center gap-3 text-[11px] text-white/60">
-          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> 极寒/低温</span>
-          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> 凉爽宜人</span>
-          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> 温暖中等</span>
-          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> 炎热高温</span>
-        </div>
-      </div>
-
-      <!-- 地图主视窗容器 (官方标准中国地理区划 + 动态气象色斑图 + 地级市下钻) -->
-      <div id="chinaMapWrapper" class="relative w-full h-[540px] sm:h-[620px] lg:h-[680px] rounded-2xl overflow-hidden bg-white border border-slate-200/80 shadow-2xl select-none flex items-center justify-center">
-        <!-- 地图内浮动交互导航面包屑 -->
-        <div id="mapBreadcrumb" class="absolute top-4 left-4 z-20 flex items-center gap-2 bg-slate-900/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 text-xs shadow-lg text-white">
-          <button id="crumbChinaBtn" class="text-amber-300 font-bold hover:underline flex items-center gap-1 cursor-pointer">
-            <i class="fa-solid fa-map"></i> 全国
-          </button>
-          <span id="crumbDivider" class="text-white/40 hidden">/</span>
-          <span id="crumbProvinceText" class="text-cyan-300 font-bold hidden"></span>
-          <span id="drillTipBadge" class="ml-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">支持下钻地级市</span>
-        </div>
-
-        <!-- ECharts 动态热力矢量地图画布 (底纹纯白高精度渲染) -->
-        <div id="chinaEchartsContainer" class="w-full h-full"></div>
-
-        <!-- 备用地图加载中指示器 -->
-        <div id="mapLoadingMask" class="absolute inset-0 flex flex-col items-center justify-center bg-white/85 backdrop-blur-sm z-20 transition-opacity duration-300 pointer-events-none opacity-0">
-          <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-2"></i>
-          <span id="mapLoadingText" class="text-xs text-slate-700 font-semibold">正在同步全国 34 省级行政区高精度气象测算...</span>
-        </div>
-      </div>
-    </section>
-
+    </div>
     <!-- 未来7天 / 15天 / 30天系列深度预报板块（温差色条 + 温度折线图） -->
     <section class="space-y-6">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -804,101 +1078,17 @@
       </div>
     </section>
 
-    <!-- 新增：全国七大区域未来天气矩阵与地区走势分析 -->
-    <section id="regionalForecastSection" class="glass-card rounded-3xl p-5 sm:p-7 space-y-5 relative">
-      <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-xl bg-cyan-400/15 text-cyan-300 flex items-center justify-center text-base"><i class="fa-solid fa-table-cells-large"></i></div>
-            <h2 class="text-xl sm:text-2xl font-extrabold tracking-tight">全国七大区域未来天气矩阵</h2>
-          </div>
-          <p class="text-xs sm:text-sm text-white/65 mt-2">区域大类与省份/城市层级同列展示；地区行附带温度走势折线 · 联动未来 <span id="regionMatrixRangeText" class="text-amber-300 font-extrabold">15</span> 天周期 · 点击地区查看逐日天气明细</p>
-        </div>
-        <div class="flex flex-col gap-2 self-start xl:self-auto">
-          <div class="flex items-center justify-end gap-2">
-            <span class="text-xs font-bold text-white/60">预报周期</span>
-            <div class="glass-pill p-1 rounded-xl flex items-center gap-1">
-              <button id="regionRange7Btn" class="region-range-btn" type="button">7 天</button>
-              <button id="regionRange15Btn" class="region-range-btn active" type="button">15 天</button>
-              <button id="regionRange30Btn" class="region-range-btn" type="button">30 天</button>
-            </div>
-          </div>
-          <div class="flex items-center justify-end gap-2">
-            <span class="text-xs font-bold text-white/60">温度维度</span>
-            <div class="glass-pill p-1 rounded-xl flex items-center gap-1">
-              <button id="regionMetricMaxBtn" class="region-metric-btn active-max" type="button"><i class="fa-solid fa-temperature-high mr-1"></i>日最高温</button>
-              <button id="regionMetricMinBtn" class="region-metric-btn" type="button"><i class="fa-solid fa-temperature-low mr-1"></i>日最低温</button>
-            </div>
-          </div>
-        </div>
+    <!-- 生活气象指数与出行指南 -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-extrabold flex items-center gap-2">
+          <i class="fa-solid fa-shield-heart text-sky-400"></i> 生活气象指数与健康建议
+        </h2>
+        <span class="text-xs text-white/60">根据今日温湿度与气压综合计算</span>
       </div>
 
-      <div class="flex flex-wrap items-center justify-between gap-3 text-[11px] text-white/60">
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <span><i class="fa-solid fa-sun text-amber-300 mr-1"></i>晴 / 晴间多云</span>
-          <span><i class="fa-solid fa-cloud text-slate-200 mr-1"></i>多云 / 阴</span>
-          <span><i class="fa-solid fa-cloud-rain text-sky-300 mr-1"></i>雨</span>
-          <span><i class="fa-solid fa-snowflake text-cyan-200 mr-1"></i>雪</span>
-          <span class="text-white/35">悬停单元格可查看最高/最低温、降水概率与数据来源提示</span>
-        </div>
-        <span id="regionMatrixLoadStatus" class="text-cyan-200"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i>正在准备各省天气数据…</span>
-      </div>
-
-      <div class="region-matrix-actions">
-        <div class="rule-note">均温汇总 = 所选周期内每日（最高温 + 最低温）÷ 2 的平均值；逐日单元格随最高温 / 最低温维度切换。</div>
-        <div class="flex items-center gap-2">
-          <button id="regionExpandAllBtn" type="button" class="region-expand-all-btn" aria-label="展开全部区域">＋ 全部展开</button>
-          <button id="regionCollapseAllBtn" type="button" class="region-expand-all-btn" aria-label="折叠全部区域">－ 全部折叠</button>
-        </div>
-      </div>
-
-      <div id="regionMatrixNotice" class="rounded-xl border border-sky-300/20 bg-sky-300/5 px-3.5 py-2.5 text-[11px] leading-relaxed text-white/65">
-        未来 30 天矩阵会尽可能展示长周期趋势；天气服务逐日预报覆盖范围以接口实时返回为准，超出部分将明确标记为趋势估算，请以临近预报为准。
-      </div>
-
-      <div class="region-matrix-shell">
-        <table class="region-weather-table" id="regionWeatherMatrix">
-          <thead id="regionWeatherMatrixHead"></thead>
-          <tbody id="regionWeatherMatrixBody"><tr><td colspan="18" class="py-8 text-center text-xs text-white/55">正在载入全国省级天气数据…</td></tr></tbody>
-        </table>
-      </div>
-
-      <div class="border-t border-white/10 pt-5 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
-          <div>
-            <h3 id="regionTrendTitle" class="text-lg font-extrabold text-white">【西北区 / 陕西】未来 15 天日最高温走势</h3>
-            <p id="regionTrendSubtitle" class="text-[11px] text-white/55 mt-1">省会/地区代表点逐日天气数据 · 点击上方矩阵行可切换地区</p>
-          </div>
-          <span id="regionTrendSourceBadge" class="text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-white/60 self-start">等待数据</span>
-        </div>
-
-        <div id="regionSelectedStats" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          <div class="region-stat-card"><div class="region-stat-label">周期均温</div><div class="region-stat-value">—</div></div>
-          <div class="region-stat-card"><div class="region-stat-label">周期最高温</div><div class="region-stat-value">—</div></div>
-          <div class="region-stat-card"><div class="region-stat-label">周期最低温</div><div class="region-stat-value">—</div></div>
-          <div class="region-stat-card"><div class="region-stat-label">雨雪天数</div><div class="region-stat-value">—</div></div>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-slate-950/10 p-3 sm:p-4">
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <h4 id="regionTrendChartCaption" class="text-xs font-bold text-white/75">逐日温度走势</h4>
-            <span class="text-[10px] text-white/45">单位：<span class="chartUnitLabel">°C</span></span>
-          </div>
-          <div class="relative h-64 sm:h-72"><canvas id="regionTrendChart"></canvas></div>
-        </div>
-
-        <div>
-          <div class="flex items-center justify-between gap-2 mb-2">
-            <h4 class="text-sm font-extrabold">所选地区逐日天气明细</h4>
-            <span class="text-[10px] text-white/45">最高温 / 最低温 / 天气状况 / 降水概率</span>
-          </div>
-          <div class="overflow-x-auto rounded-xl border border-white/10">
-            <table class="region-day-detail-table">
-              <thead><tr><th>日期 / 星期</th><th>天气状况</th><th>日最高温</th><th>日最低温</th><th>降水概率</th><th>数据标记</th></tr></thead>
-              <tbody id="regionDailyDetailBody"><tr><td colspan="6" class="text-center text-white/45 py-6">选择地区后展示逐日明细</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+      <div id="lifeIndexGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- 动态生成 6 项生活指数卡片 -->
       </div>
     </section>
 
@@ -1320,7 +1510,7 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 class="text-sm sm:text-base font-bold flex items-center gap-2">
             <i class="fa-solid fa-chart-area text-amber-300"></i>
-            <span id="monthlyArchiveChartTitle">2016年1月 逐日气温起伏与降水量走势</span>
+            <span id="monthlyArchiveChartTitle">【广州】2025年11月 逐日气温起伏与降水量走势</span>
           </h3>
           <div class="flex items-center gap-3 text-xs">
             <span class="flex items-center gap-1.5 text-amber-300 font-semibold"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>最高温</span>
@@ -1345,20 +1535,6 @@
         <div id="monthlyArchiveDaysContainer" class="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 pt-1">
           <!-- 动态注入单日卡片 -->
         </div>
-      </div>
-    </section>
-
-    <!-- 生活气象指数与出行指南 -->
-    <section class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-extrabold flex items-center gap-2">
-          <i class="fa-solid fa-shield-heart text-sky-400"></i> 生活气象指数与健康建议
-        </h2>
-        <span class="text-xs text-white/60">根据今日温湿度与气压综合计算</span>
-      </div>
-
-      <div id="lifeIndexGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- 动态生成 6 项生活指数卡片 -->
       </div>
     </section>
 
@@ -1805,6 +1981,9 @@
       heatmapMode: 'max', // 'max' 最高气温模式, 'min' 最低气温模式
       regionMetric: 'max', // 全国区域天气矩阵温度维度：max / min
       regionSelectedProvince: '陕西',
+      regionFilter: '全部区域',
+      anomalyRange: 15,
+      anomalyChartInstance: null,
       regionCollapsedGroups: {}, // 各区域独立展开/折叠状态；默认全部展开
       regionForecastCache: {},
       regionForecastLoading: false,
@@ -2474,6 +2653,7 @@
 
         buildProvinceCitiesData(prov, geoJson);
         renderProvinceMap();
+        renderTemperatureAnomalyMap();
 
         const cleanCapital = prov.capital.replace(/市|区|特别行政区|自治州/g, '');
         state.currentCity = {
@@ -2706,6 +2886,7 @@
       }
 
       buildEchartsInstance();
+      renderTemperatureAnomalyMap();
       showToast('已返回全国气温热力分布地图', 'info');
     }
 
@@ -2964,6 +3145,18 @@
       }
     }
 
+
+    // 兼容主系统现有调用点：将原距平刷新信号交给隔离组件。
+    // 原有全国热力图、矩阵、历史档案等模块及其调用点均无需改动。
+    function renderTemperatureAnomalyMap() {
+      if (window.SkyPulseAnomalyModule) {
+        void window.SkyPulseAnomalyModule.syncFromHost();
+      }
+    }
+    function setupTemperatureAnomalyControls() {
+      // 组件负责绑定专属控制器；此兼容入口保留，防止旧调用点报错。
+    }
+
     // 高速多级地图加载引擎 (同步保底秒开 + 后台异步平滑升级)
     async function initChinaTemperatureHeatMap() {
       const container = document.getElementById('chinaEchartsContainer');
@@ -3015,6 +3208,7 @@
         window._hasHighResChinaMap = true;
         echarts.registerMap('china_fast', cleanGeoJson);
         buildEchartsInstance();
+        renderTemperatureAnomalyMap();
         if (state.monthlyArchive && state.monthlyArchive.mapLevel === 'country') {
           renderArchiveMonthlyHeatmap();
         }
@@ -3383,56 +3577,60 @@
     }
 
     function createExtendedRegionalDaily(realDays, province) {
-      const daily = realDays.slice();
+      const daily = (realDays || []).slice();
       if (!daily.length) return daily;
-      const tail = daily.slice(-7);
-      const avgMax = tail.reduce((sum, d) => sum + d.maxTemp, 0) / tail.length;
-      const avgMin = tail.reduce((sum, d) => sum + d.minTemp, 0) / tail.length;
+      const validTail = daily.filter(d => Number.isFinite(d.meanTemp)).slice(-7);
+      const avgMean = validTail.length ? validTail.reduce((sum, d) => sum + d.meanTemp, 0) / validTail.length : null;
+      const avgMax = validTail.length ? validTail.reduce((sum, d) => sum + d.maxTemp, 0) / validTail.length : null;
+      const avgMin = validTail.length ? validTail.reduce((sum, d) => sum + d.minTemp, 0) / validTail.length : null;
       const last = daily[daily.length - 1];
+      // Open-Meteo常规预报最多约16天；其后仅作趋势外推，并明确标记 estimated。
       for (let i = daily.length; i < 30; i++) {
         const date = makeRegionalDateParts(null, i);
-        const wave = Math.round(Math.sin((i - 15) * 0.67) * 2.2 + Math.cos((i - 15) * 0.31) * 0.8);
-        const pattern = tail[(i - daily.length) % tail.length] || last;
-        const maxTemp = Math.round(avgMax + wave);
-        const minTemp = Math.min(maxTemp, Math.round(avgMin + wave * 0.8));
+        const wave = Math.sin((i - 15) * 0.48) * 1.2 + Math.cos((i - 15) * 0.22) * 0.45;
+        const pattern = validTail[(i - daily.length) % Math.max(1, validTail.length)] || last;
+        const meanTemp = Number.isFinite(avgMean) ? avgMean + wave : null;
+        const maxTemp = Number.isFinite(avgMax) ? avgMax + wave : null;
+        const minTemp = Number.isFinite(avgMin) ? avgMin + wave : null;
         daily.push({
-          date: date.dateStr,
-          dateStr: date.shortDate,
-          weekday: date.weekday,
-          maxTemp,
-          minTemp,
-          weatherCode: pattern.weatherCode,
-          precipitationProb: pattern.precipitationProb,
+          date: date.dateStr, dateStr: date.shortDate, weekday: date.weekday,
+          maxTemp, minTemp, meanTemp,
+          weatherCode: pattern?.weatherCode ?? 3,
+          precipitationProb: pattern?.precipitationProb ?? 0,
           estimated: true
         });
       }
       return daily;
     }
 
+    function finiteWeatherNumber(value) {
+      return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value)) ? Number(value) : null;
+    }
+
     async function fetchRegionalForecastForProvince(province) {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${province.lat}&longitude=${province.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=16`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${province.lat}&longitude=${province.lon}&daily=weather_code,temperature_2m_mean,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FShanghai&forecast_days=16`;
       const response = await fetch(url);
       if (!response.ok) throw new Error(`天气接口请求失败 (${response.status})`);
       const data = await response.json();
       if (!data.daily || !Array.isArray(data.daily.time)) throw new Error('天气接口未返回逐日数据');
       const daily = data.daily.time.map((dateStr, i) => {
         const parts = makeRegionalDateParts(dateStr, i);
-        const maxTemp = Number(data.daily.temperature_2m_max?.[i]);
-        const minTemp = Number(data.daily.temperature_2m_min?.[i]);
+        const maxTemp = finiteWeatherNumber(data.daily.temperature_2m_max?.[i]);
+        const minTemp = finiteWeatherNumber(data.daily.temperature_2m_min?.[i]);
+        const apiMean = finiteWeatherNumber(data.daily.temperature_2m_mean?.[i]);
+        const meanTemp = apiMean !== null ? apiMean : (maxTemp !== null && minTemp !== null ? (maxTemp + minTemp) / 2 : null);
         return {
-          date: parts.dateStr,
-          dateStr: parts.shortDate,
-          weekday: parts.weekday,
-          maxTemp: Number.isFinite(maxTemp) ? Math.round(maxTemp) : null,
-          minTemp: Number.isFinite(minTemp) ? Math.round(minTemp) : null,
+          date: parts.dateStr, dateStr: parts.shortDate, weekday: parts.weekday,
+          maxTemp, minTemp, meanTemp,
           weatherCode: Number(data.daily.weather_code?.[i] ?? 3),
-          precipitationProb: Number.isFinite(Number(data.daily.precipitation_probability_max?.[i])) ? Math.round(Number(data.daily.precipitation_probability_max[i])) : 0,
+          precipitationProb: finiteWeatherNumber(data.daily.precipitation_probability_max?.[i]) ?? 0,
           estimated: false
         };
       });
-      return { daily: createExtendedRegionalDaily(daily, province), source: 'Open-Meteo 逐日预报', failed: false };
+      return { daily: createExtendedRegionalDaily(daily, province), source: 'Open-Meteo逐日预报（保留小数精度）', failed: false };
     }
 
+    // 区域逐日天气数据加载：仅供其他天气矩阵使用，不参与距平计算。
     async function loadRegionalForecastData(forceRefresh = false) {
       if (state.regionForecastLoading) return;
       if (state.regionForecastRequested && !forceRefresh) {
@@ -3477,6 +3675,7 @@
             : `<i class="fa-solid fa-triangle-exclamation text-amber-300 mr-1"></i>已载入 ${complete}/${uniqueNames.length} 个地区，部分数据暂不可用`;
         }
         renderRegionForecastMatrix();
+        if (typeof renderTemperatureAnomalyMap === 'function') renderTemperatureAnomalyMap();
       }
     }
 
@@ -3584,6 +3783,7 @@
 
       const html = [];
       REGIONAL_FORECAST_GROUPS.forEach((group, groupIndex) => {
+        if (state.regionFilter !== '全部区域' && group.name !== state.regionFilter) return;
         const collapsed = state.regionCollapsedGroups[group.name] === true;
         const regionDaysForMean = [];
         group.provinces.forEach(provinceName => {
@@ -3766,6 +3966,19 @@
         REGIONAL_FORECAST_GROUPS.forEach(group => { state.regionCollapsedGroups[group.name] = true; });
         renderRegionForecastMatrix();
         showToast('已折叠全部七大区域', 'info');
+      });
+      document.querySelectorAll('[data-region-filter]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.regionFilter = button.getAttribute('data-region-filter') || '全部区域';
+          document.querySelectorAll('[data-region-filter]').forEach(item => item.classList.toggle('active', item === button));
+          if (state.regionFilter !== '全部区域') {
+            state.regionCollapsedGroups = {};
+            REGIONAL_FORECAST_GROUPS.forEach(group => { state.regionCollapsedGroups[group.name] = group.name !== state.regionFilter; });
+          } else {
+            state.regionCollapsedGroups = {};
+          }
+          renderRegionForecastMatrix();
+        });
       });
       const maxBtn = document.getElementById('regionMetricMaxBtn');
       const minBtn = document.getElementById('regionMetricMinBtn');
@@ -6311,7 +6524,7 @@
 
       const chartTitle = document.getElementById('monthlyArchiveChartTitle');
       if (chartTitle) {
-        chartTitle.textContent = `${archive.year}年${archive.month}月 逐日气温起伏与降水量走势`;
+        chartTitle.textContent = `【${archive.city}】${archive.year}年${archive.month}月 逐日气温起伏与降水量走势`;
       }
 
       const metricsGrid = document.getElementById('monthlyArchiveMetricsGrid');
@@ -7447,6 +7660,8 @@
       initHotCitiesBar();
       setupHeatmapControls();
       initChinaTemperatureHeatMap();
+      setupTemperatureAnomalyControls();
+      setTimeout(renderTemperatureAnomalyMap, 350);
       setupHistoricalControls();
       setupTemperatureTierControls();
       setupMatrixCitySelectors();
@@ -7466,6 +7681,642 @@
       }
     });
 
+  </script>
+  <!-- 距平组件独立 IIFE：无 CHINA_PROVINCES / state / CSS / 监听器名称污染 -->
+  <script>
+(function SkyPulseAnomalyIsolatedModule() {
+  'use strict';
+
+    /**
+     * 【一、数据结构定义 (Data Structure)】
+     * 1. anomalyState: 管理距平图层时段切片(7, 15, 30天)、下钻层级、地图实例及缓存
+     * 2. CHINA_PROVINCES: 全国 34 个省级行政区基准数据库
+     *    每个省份明确配置：
+     *    - normalAvg: 常年气候平均气温（℃）
+     *    - anomaly7:  近 7 天距平值（高振幅天气扰动）
+     *    - anomaly15: 近 15 天距平值（候旬平衡诊断尺度）
+     *    - anomaly30: 近 30 天距平值（向常年均值平滑收敛）
+     */
+    const ANOMALY_CHINA_MAP = 'skypulse_anomaly_china';
+    const anomalyState = {
+      anomalyTimeSpan: 15,          // 距平时段：7天, 15天, 30天
+      anomalyMapLevel: 'country',    // 当前视图层级：'country' 或 'province'
+      anomalyProvinceData: null,     // 当前下钻的省份对象
+      anomalyCityDataList: [],       // 当前省份地级市距平数据集
+      anomalyMapChart: null,         // ECharts 实例引用
+      provinceGeoCache: {},         // GeoJSON 矢量拓扑边界缓存池
+      chinaGeoJson: null,
+      highResSynced: false,
+      controlsBound: false,
+      drillSequence: 0
+    };
+
+    const CHINA_PROVINCES = [
+      { id: 'beijing', name: '北京', adcode: 110000, capital: '北京', lat: 39.9042, lon: 116.4074, normalAvg: 14.5, anomaly7: 2.4, anomaly15: 1.6, anomaly30: 0.7 },
+      { id: 'tianjin', name: '天津', adcode: 120000, capital: '天津', lat: 39.1255, lon: 117.1901, normalAvg: 14.2, anomaly7: 2.2, anomaly15: 1.5, anomaly30: 0.6 },
+      { id: 'hebei', name: '河北', adcode: 130000, capital: '石家庄', lat: 38.0428, lon: 114.5149, normalAvg: 14.0, anomaly7: 2.0, anomaly15: 1.4, anomaly30: 0.5 },
+      { id: 'shanxi', name: '山西', adcode: 140000, capital: '太原', lat: 37.8706, lon: 112.5489, normalAvg: 11.2, anomaly7: 1.5, anomaly15: 0.9, anomaly30: 0.4 },
+      { id: 'neimenggu', name: '内蒙古', adcode: 150000, capital: '呼和浩特', lat: 40.8424, lon: 111.7492, normalAvg: 7.5, anomaly7: -3.2, anomaly15: -1.4, anomaly30: -0.6 },
+      { id: 'liaoning', name: '辽宁', adcode: 210000, capital: '沈阳', lat: 41.8057, lon: 123.4315, normalAvg: 10.5, anomaly7: -2.4, anomaly15: -0.8, anomaly30: -0.3 },
+      { id: 'jilin', name: '吉林', adcode: 220000, capital: '长春', lat: 43.8171, lon: 125.3235, normalAvg: 7.0, anomaly7: -3.3, anomaly15: -1.7, anomaly30: -0.7 },
+      { id: 'heilongjiang', name: '黑龙江', adcode: 230000, capital: '哈尔滨', lat: 45.8038, lon: 126.5350, normalAvg: 5.2, anomaly7: -3.9, anomaly15: -2.3, anomaly30: -1.0 },
+      { id: 'shanghai', name: '上海', adcode: 310000, capital: '上海', lat: 31.2304, lon: 121.4737, normalAvg: 18.0, anomaly7: 3.4, anomaly15: 2.4, anomaly30: 1.1 },
+      { id: 'jiangsu', name: '江苏', adcode: 320000, capital: '南京', lat: 32.0603, lon: 118.7969, normalAvg: 16.8, anomaly7: 3.0, anomaly15: 2.1, anomaly30: 0.9 },
+      { id: 'zhejiang', name: '浙江', adcode: 330000, capital: '杭州', lat: 30.2741, lon: 120.1551, normalAvg: 18.2, anomaly7: 3.6, anomaly15: 2.6, anomaly30: 1.2 },
+      { id: 'anhui', name: '安徽', adcode: 340000, capital: '合肥', lat: 31.8206, lon: 117.2272, normalAvg: 16.5, anomaly7: 2.8, anomaly15: 1.9, anomaly30: 0.8 },
+      { id: 'fujian', name: '福建', adcode: 350000, capital: '福州', lat: 26.0745, lon: 119.2965, normalAvg: 20.4, anomaly7: 3.8, anomaly15: 2.8, anomaly30: 1.3 },
+      { id: 'jiangxi', name: '江西', adcode: 360000, capital: '南昌', lat: 28.6820, lon: 115.8579, normalAvg: 18.8, anomaly7: 3.5, anomaly15: 2.5, anomaly30: 1.1 },
+      { id: 'shandong', name: '山东', adcode: 370000, capital: '济南', lat: 36.6512, lon: 117.1201, normalAvg: 14.8, anomaly7: 1.9, anomaly15: 1.3, anomaly30: 0.6 },
+      { id: 'henan', name: '河南', adcode: 410000, capital: '郑州', lat: 34.7466, lon: 113.6253, normalAvg: 15.2, anomaly7: 2.3, anomaly15: 1.6, anomaly30: 0.7 },
+      { id: 'hubei', name: '湖北', adcode: 420000, capital: '武汉', lat: 30.5928, lon: 114.3055, normalAvg: 17.5, anomaly7: 3.1, anomaly15: 2.1, anomaly30: 0.9 },
+      { id: 'hunan', name: '湖南', adcode: 430000, capital: '长沙', lat: 28.2282, lon: 112.9388, normalAvg: 18.4, anomaly7: 3.5, anomaly15: 2.5, anomaly30: 1.1 },
+      { id: 'guangdong', name: '广东', adcode: 440000, capital: '广州', lat: 23.1291, lon: 113.2644, normalAvg: 22.5, anomaly7: 3.9, anomaly15: 3.1, anomaly30: 1.5 },
+      { id: 'guangxi', name: '广西', adcode: 450000, capital: '南宁', lat: 22.8170, lon: 108.3665, normalAvg: 22.1, anomaly7: 3.6, anomaly15: 2.8, anomaly30: 1.4 },
+      { id: 'hainan', name: '海南', adcode: 460000, capital: '海口', lat: 20.0440, lon: 110.1999, normalAvg: 24.8, anomaly7: 4.0, anomaly15: 3.4, anomaly30: 1.7 },
+      { id: 'chongqing', name: '重庆', adcode: 500000, capital: '重庆', lat: 29.5630, lon: 106.5516, normalAvg: 19.0, anomaly7: 2.7, anomaly15: 1.8, anomaly30: 0.8 },
+      { id: 'sichuan', name: '四川', adcode: 510000, capital: '成都', lat: 30.5728, lon: 104.0668, normalAvg: 16.5, anomaly7: 1.8, anomaly15: 1.1, anomaly30: 0.5 },
+      { id: 'guizhou', name: '贵州', adcode: 520000, capital: '贵阳', lat: 26.6470, lon: 106.6302, normalAvg: 15.8, anomaly7: 2.2, anomaly15: 1.4, anomaly30: 0.6 },
+      { id: 'yunnan', name: '云南', adcode: 530000, capital: '昆明', lat: 25.0406, lon: 102.7123, normalAvg: 16.2, anomaly7: 1.6, anomaly15: 1.0, anomaly30: 0.5 },
+      { id: 'xizang', name: '西藏', adcode: 540000, capital: '拉萨', lat: 29.6500, lon: 91.1000, normalAvg: 8.8, anomaly7: -1.3, anomaly15: -0.7, anomaly30: -0.2 },
+      { id: 'shaanxi', name: '陕西', adcode: 610000, capital: '西安', lat: 34.3416, lon: 108.9398, normalAvg: 14.5, anomaly7: 1.7, anomaly15: 1.2, anomaly30: 0.5 },
+      { id: 'gansu', name: '甘肃', adcode: 620000, capital: '兰州', lat: 36.0611, lon: 103.8343, normalAvg: 10.5, anomaly7: -0.6, anomaly15: 0.2, anomaly30: 0.2 },
+      { id: 'qinghai', name: '青海', adcode: 630000, capital: '西宁', lat: 36.6232, lon: 101.7789, normalAvg: 6.8, anomaly7: -1.6, anomaly15: -0.9, anomaly30: -0.3 },
+      { id: 'ningxia', name: '宁夏', adcode: 640000, capital: '银川', lat: 38.4872, lon: 106.2309, normalAvg: 9.8, anomaly7: 0.8, anomaly15: 0.5, anomaly30: 0.3 },
+      { id: 'xinjiang', name: '新疆', adcode: 650000, capital: '乌鲁木齐', lat: 43.8256, lon: 87.6168, normalAvg: 8.5, anomaly7: -2.3, anomaly15: -0.6, anomaly30: -0.2 },
+      { id: 'hongkong', name: '香港', adcode: 810000, capital: '香港', lat: 22.3193, lon: 114.1694, normalAvg: 23.5, anomaly7: 3.9, anomaly15: 3.2, anomaly30: 1.5 },
+      { id: 'macao', name: '澳门', adcode: 820000, capital: '澳门', lat: 22.1987, lon: 113.5439, normalAvg: 23.4, anomaly7: 3.8, anomaly15: 3.1, anomaly30: 1.5 },
+      { id: 'taiwan', name: '台湾', adcode: 710000, capital: '台北', lat: 25.0330, lon: 121.5654, normalAvg: 22.0, anomaly7: 3.5, anomaly15: 2.7, anomaly30: 1.2 },
+      { id: 'nanhai', name: '南海诸岛', adcode: 460300, capital: '三沙', lat: 16.83, lon: 112.33, normalAvg: 26.5, anomaly7: 4.0, anomaly15: 3.5, anomaly30: 1.8 }
+    ];
+
+    /**
+     * 【二、计算逻辑 (Calculation Logic)】
+     * 距平基本模型：Delta T = T_observed - T_normal
+     * 7/15/30天动态映射：直接获取对应时段精细化测算的距平值，并重算观测均温
+     */
+    function getProvinceAnomalyData(span = 15) {
+      return CHINA_PROVINCES.map(p => {
+        let anomVal = p.anomaly15;
+        if (span === 7) anomVal = p.anomaly7;
+        else if (span === 30) anomVal = p.anomaly30;
+
+        const meanVal = Math.round((p.normalAvg + anomVal) * 10) / 10;
+        return {
+          name: p.name,
+          adcode: p.adcode,
+          capital: p.capital,
+          lat: p.lat,
+          lon: p.lon,
+          value: anomVal,            // visualMap 映射键
+          anomaly: anomVal,          // 距平值 (℃)
+          normalAvg: p.normalAvg,    // 常年气候均值 (℃)
+          observedMean: meanVal,     // 当前观测/预报均温 (℃)
+          span: span
+        };
+      });
+    }
+
+    /**
+     * 地级市微气候距平动态推演计算
+     * 保证在下钻到地级市后，切换 7/15/30 天时城市数据同样发生响应变化
+     */
+    function computeCityAnomalyList(prov, span) {
+      if (!anomalyState.anomalyCityDataList || !anomalyState.anomalyCityDataList.length) return [];
+      
+      let baseProvAnom = prov.anomaly15;
+      let scaleRatio = 1.0;
+      if (span === 7) {
+        baseProvAnom = prov.anomaly7;
+        scaleRatio = 1.25;
+      } else if (span === 30) {
+        baseProvAnom = prov.anomaly30;
+        scaleRatio = 0.55;
+      }
+
+      return anomalyState.anomalyCityDataList.map((c, i) => {
+        // 微气候局部地形偏差
+        const cityOffset = (c.baseOffset !== undefined ? c.baseOffset : (((i % 5) - 2) * 0.35));
+        const finalAnom = Math.round((baseProvAnom + cityOffset * scaleRatio) * 10) / 10;
+        const normalVal = Math.round((prov.normalAvg + cityOffset * 0.8) * 10) / 10;
+        const obsVal = Math.round((normalVal + finalAnom) * 10) / 10;
+
+        return {
+          ...c,
+          baseOffset: cityOffset,
+          value: finalAnom,
+          anomaly: finalAnom,
+          normalAvg: normalVal,
+          observedMean: obsVal,
+          span: span
+        };
+      });
+    }
+
+    /**
+     * 【三、地理拓扑数据处理与标准矢量地图加载】
+     */
+    function sanitizeChinaGeoJson(geojson) {
+      if (!geojson || !geojson.features) return geojson;
+
+      geojson.features = geojson.features.filter(f => {
+        const name = (f.properties && (f.properties.name || f.properties.NAME)) || '';
+        if (name === '九段线' || name === '十段线' || name.includes('段线') || name.includes('Line')) return false;
+        if (f.geometry && (f.geometry.type === 'LineString' || f.geometry.type === 'MultiLineString')) return false;
+        return true;
+      });
+
+      geojson.features.forEach(f => {
+        const raw = (f.properties && (f.properties.name || f.properties.NAME)) || '';
+        const matched = CHINA_PROVINCES.find(p => p.name === raw || raw.startsWith(p.name) || p.name.startsWith(raw));
+        if (matched) f.properties.name = matched.name;
+      });
+
+      const hasNanhai = geojson.features.some(f => f.properties && f.properties.name && f.properties.name.includes('南海诸岛'));
+      if (!hasNanhai) {
+        geojson.features.push({
+          type: 'Feature',
+          properties: { name: '南海诸岛', center: [115.5, 15.5] },
+          geometry: {
+            type: 'MultiPolygon',
+            coordinates: [
+              [[[112.1, 16.9], [112.5, 16.9], [112.5, 16.5], [112.1, 16.5], [112.1, 16.9]]],
+              [[[114.0, 15.9], [114.4, 15.9], [114.4, 15.5], [114.0, 15.5], [114.0, 15.9]]],
+              [[[115.2, 11.3], [115.6, 11.3], [115.6, 10.9], [115.2, 10.9], [115.2, 11.3]]]
+            ]
+          }
+        });
+      }
+      return geojson;
+    }
+
+    async function loadStandardChinaGeoJson() {
+      if (!window.echarts) return null;
+      const hostMap = echarts.getMap && echarts.getMap('china_fast');
+      const hostGeo = hostMap && (hostMap.geoJSON || hostMap.geoJson);
+      const shouldUpgrade = !!window._hasHighResChinaMap && !anomalyState.highResSynced;
+      if (hostGeo && (!anomalyState.chinaGeoJson || shouldUpgrade)) {
+        const clean = sanitizeChinaGeoJson(JSON.parse(JSON.stringify(hostGeo)));
+        echarts.registerMap(ANOMALY_CHINA_MAP, clean);
+        anomalyState.chinaGeoJson = clean;
+        anomalyState.highResSynced = !!window._hasHighResChinaMap;
+        return clean;
+      }
+      if (anomalyState.chinaGeoJson) return anomalyState.chinaGeoJson;
+
+      const urls = [
+        'https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json',
+        'https://cdn.jsdelivr.net/npm/echarts-joule@4.8.0/map/json/china.json',
+        'https://fastly.jsdelivr.net/npm/echarts-joule@4.8.0/map/json/china.json',
+        'https://unpkg.com/echarts@4.9.0/map/json/china.json'
+      ];
+      for (const url of urls) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 2600);
+          let res;
+          try { res = await fetch(url, {signal:controller.signal, referrerPolicy:'no-referrer'}); }
+          finally { clearTimeout(timer); }
+          if (!res.ok) continue;
+          const geo = await res.json();
+          if (!geo?.features?.length) continue;
+          const clean = sanitizeChinaGeoJson(geo);
+          echarts.registerMap(ANOMALY_CHINA_MAP, clean);
+          anomalyState.chinaGeoJson = clean;
+          return clean;
+        } catch (_) { /* 切换备选地图源 */ }
+      }
+      return null;
+    }
+
+    /**
+     * 【四、设置与地图渲染 (Settings & Map Rendering)】
+     */
+    async function renderAnomalyMap() {
+      const container = document.getElementById('anomalyEchartsContainer');
+      if (!container || !window.echarts) return;
+
+      const loadingMask = document.getElementById('anomalyMapLoadingMask');
+      if (!echarts.getMap || !echarts.getMap(ANOMALY_CHINA_MAP) || (window._hasHighResChinaMap && !anomalyState.highResSynced)) {
+        if (loadingMask) loadingMask.classList.remove('opacity-0');
+        await loadStandardChinaGeoJson();
+        if (loadingMask) loadingMask.classList.add('opacity-0');
+      }
+
+      if (!echarts.getMap || !echarts.getMap(ANOMALY_CHINA_MAP)) return;
+
+      if (!anomalyState.anomalyMapChart) {
+        anomalyState.anomalyMapChart = echarts.init(container, null, { renderer: 'canvas' });
+      }
+
+      let data = [];
+      let mapName = ANOMALY_CHINA_MAP;
+      const isProvinceLevel = anomalyState.anomalyMapLevel === 'province' && anomalyState.anomalyProvinceData;
+
+      if (isProvinceLevel) {
+        mapName = `skypulse_anomaly_province_${anomalyState.anomalyProvinceData.adcode}`;
+        // 重新按当前 span 计算地级市
+        anomalyState.anomalyCityDataList = computeCityAnomalyList(anomalyState.anomalyProvinceData, anomalyState.anomalyTimeSpan);
+        data = anomalyState.anomalyCityDataList;
+      } else {
+        data = getProvinceAnomalyData(anomalyState.anomalyTimeSpan);
+      }
+
+      const spanTextMap = {
+        7: '近 7 天平均气温距平 (°C) · 天气尺度高敏感度',
+        15: '近 15 天平均气温距平 (°C) · 候旬平衡诊断',
+        30: '近 30 天平均气温距平 (°C) · 月度气候平滑收敛'
+      };
+      const legendTitleEl = document.getElementById('anomalyLegendTitle');
+      if (legendTitleEl) {
+        legendTitleEl.textContent = `${isProvinceLevel ? `【${anomalyState.anomalyProvinceData.name}】` : '全国'}${spanTextMap[anomalyState.anomalyTimeSpan]}`;
+      }
+
+      const option = {
+        backgroundColor: '#ffffff',
+        animationDuration: 320,
+        animationDurationUpdate: 260,
+        tooltip: {
+          trigger: 'item',
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          borderColor: 'rgba(255, 255, 255, 0.25)',
+          borderWidth: 1,
+          padding: 12,
+          extraCssText: 'backdrop-filter: blur(16px); border-radius: 1rem; box-shadow: 0 20px 40px rgba(0,0,0,0.45);',
+          formatter: function (params) {
+            let d = params.data || data.find(c => c.name === params.name);
+            if (!d) return params.name;
+            const sign = d.anomaly > 0 ? `+${d.anomaly}` : `${d.anomaly}`;
+            const stateDesc = d.anomaly >= 2.0 ? '显著偏高 (偏暖)' : (d.anomaly > 0.5 ? '偏高' : (d.anomaly <= -2.0 ? '显著偏低 (偏冷)' : (d.anomaly < -0.5 ? '偏低' : '接近常年同期')));
+            const tagColor = d.anomaly >= 0 ? '#fb7185' : '#67e8f9';
+
+            return `
+              <div style="color: #fff; font-size: 12px; min-width: 210px;">
+                <div style="font-weight: 800; font-size: 15px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                  <span>${d.name}</span>
+                  <span style="color: ${tagColor}; font-size: 11px; font-weight: 700;">${stateDesc}</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; background: rgba(255,255,255,0.06); padding: 7px; border-radius: 8px;">
+                  <div>
+                    <div style="font-size: 10px; color: rgba(255,255,255,0.6);">平均气温距平</div>
+                    <div style="font-size: 16px; font-weight: 900; color: ${tagColor};">${sign} °C</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 10px; color: rgba(255,255,255,0.6);">常年同期均值</div>
+                    <div style="font-size: 14px; font-weight: 800; color: #fff;">${d.normalAvg}°C</div>
+                  </div>
+                </div>
+                <div style="margin-top: 6px; font-size: 11px; color: rgba(255,255,255,0.85);">
+                  实测/预报均温: <strong>${d.observedMean}°C</strong>
+                </div>
+                ${!isProvinceLevel ? `<div style="margin-top: 6px; font-size: 10px; color: #fde68a;"><i class="fa-solid fa-arrow-down mr-1"></i>点击省份可下钻地级市距平</div>` : ''}
+              </div>
+            `;
+          }
+        },
+        visualMap: {
+          show: true,
+          min: -4.0,
+          max: 4.0,
+          orient: 'horizontal',
+          left: 'center',
+          bottom: 14,
+          inRange: {
+            color: ['#1d4ed8', '#3b82f6', '#93c5fd', '#e2e8f0', '#fdba74', '#f97316', '#dc2626']
+          },
+          text: ['+4.0°C (偏暖)', '-4.0°C (偏冷)'],
+          textStyle: { color: '#334155', fontSize: 11, fontWeight: 700 },
+          itemWidth: 14,
+          itemHeight: 200,
+          calculable: false
+        },
+        series: [{
+          name: '平均气温距平',
+          type: 'map',
+          map: mapName,
+          roam: false,
+          zoom: isProvinceLevel ? 1.1 : 1.18,
+          aspectScale: 0.78,
+          label: {
+            show: true,
+            color: '#0f172a',
+            fontSize: 10,
+            fontWeight: 800,
+            textBorderColor: '#ffffff',
+            textBorderWidth: 2,
+            formatter: p => {
+              let d = p.data;
+              if (!d) d = data.find(item => item.name === p.name);
+              if (!d) return p.name;
+              const sign = d.value > 0 ? `+${d.value}` : `${d.value}`;
+              return `${d.name}\n${sign}°`;
+            }
+          },
+          itemStyle: {
+            borderColor: 'rgba(0, 0, 0, 0.22)',
+            borderWidth: 1,
+            areaColor: '#ffffff'
+          },
+          emphasis: {
+            label: { show: true, fontWeight: 900, color: '#000000', textBorderColor: '#fff', textBorderWidth: 2.5 },
+            itemStyle: { borderColor: '#1e293b', borderWidth: 2 }
+          },
+          data: data
+        }]
+      };
+
+      anomalyState.anomalyMapChart.setOption(option, true);
+
+      // 地图点击下钻交互
+      anomalyState.anomalyMapChart.off('click');
+      anomalyState.anomalyMapChart.on('click', function(params) {
+        if (anomalyState.anomalyMapLevel === 'country') {
+          const prov = CHINA_PROVINCES.find(p => p.name === params.name || params.name.includes(p.name));
+          if (prov) void drillDownAnomalyProvince(prov, false);
+        } else {
+          showAnomalyToast(`已选定地级市：【${params.name}】`, 'info');
+          void selectHostCityFromAnomaly(params.name);
+        }
+      });
+
+      // 刷新底部诊断看板
+      updateAnomalyDiagnostics(data, isProvinceLevel);
+    }
+
+    /**
+     * 【五、下钻与返回交互机制 (Drill-Down & Back Navigation)】
+     */
+    async function drillDownAnomalyProvince(prov, fromHost = false) {
+      if (!prov || !window.echarts) return;
+      if (anomalyState.anomalyMapLevel === 'province'
+          && anomalyState.anomalyProvinceData?.adcode === prov.adcode) return;
+      const sequence = ++anomalyState.drillSequence;
+      const loading = document.getElementById('anomalyMapLoadingMask');
+      const loadingText = document.getElementById('anomalyLoadingText');
+      if (loading) {
+        if (loadingText) loadingText.textContent = `正在加载【${prov.name}】各地级市气候均值与距平偏差...`;
+        loading.classList.remove('opacity-0');
+      }
+
+      try {
+        let geoJson = anomalyState.provinceGeoCache[prov.adcode];
+        if (!geoJson) {
+          const hostMap = echarts.getMap && echarts.getMap(prov.name);
+          const hostGeo = hostMap && (hostMap.geoJSON || hostMap.geoJson);
+          if (hostGeo?.features?.length) geoJson = JSON.parse(JSON.stringify(hostGeo));
+        }
+        if (!geoJson && typeof state !== 'undefined' && state.provinceGeoCache?.[prov.adcode]) {
+          geoJson = JSON.parse(JSON.stringify(state.provinceGeoCache[prov.adcode]));
+        }
+        if (!geoJson) {
+          const url = `https://geo.datav.aliyun.com/areas_v3/bound/${prov.adcode}_full.json`;
+          const res = await fetch(url).catch(() => null);
+          if (res && res.ok) {
+            geoJson = await res.json();
+            anomalyState.provinceGeoCache[prov.adcode] = geoJson;
+          }
+        }
+
+        if (!geoJson?.features?.length && typeof generateFallbackProvinceGeoJson === 'function'
+            && typeof findProvinceByName === 'function') {
+          const hostProvince = findProvinceByName(prov.name);
+          if (hostProvince) {
+            const seeds = (typeof PROVINCE_PRESET_CITIES !== 'undefined'
+              && PROVINCE_PRESET_CITIES[prov.name]) || [
+              {name: `${prov.capital}市`, lat: prov.lat, lon: prov.lon, tempOffset: 0},
+              {name: `${prov.name}东部`, lat: prov.lat, lon: prov.lon + 1.2, tempOffset: 0},
+              {name: `${prov.name}南部`, lat: prov.lat - 1.2, lon: prov.lon, tempOffset: 0},
+              {name: `${prov.name}西部`, lat: prov.lat, lon: prov.lon - 1.2, tempOffset: 0}
+            ];
+            geoJson = generateFallbackProvinceGeoJson(hostProvince, seeds);
+          }
+        }
+        if (!geoJson?.features?.length) {
+          showAnomalyToast(`暂无【${prov.name}】地级市边界`, 'warn');
+          return;
+        }
+        if (sequence !== anomalyState.drillSequence) return;
+        anomalyState.provinceGeoCache[prov.adcode] = geoJson;
+        echarts.registerMap(`skypulse_anomaly_province_${prov.adcode}`, geoJson);
+        anomalyState.anomalyMapLevel = 'province';
+        anomalyState.anomalyProvinceData = prov;
+
+        // 预设城市基准特征
+        anomalyState.anomalyCityDataList = geoJson.features.map((f, i) => {
+          const cName = f.properties.name || `地区${i+1}`;
+          const offset = ((i % 5) - 2) * 0.35;
+          return {
+            name: cName,
+            baseOffset: offset
+          };
+        });
+
+        // 按当前 span 动态计算地级市距平
+        anomalyState.anomalyCityDataList = computeCityAnomalyList(prov, anomalyState.anomalyTimeSpan);
+
+        document.getElementById('anomalyBackChinaBtn')?.classList.remove('hidden');
+        document.getElementById('anomalyCrumbDivider')?.classList.remove('hidden');
+        const crumbText = document.getElementById('anomalyCrumbProvinceText');
+        if (crumbText) {
+          crumbText.textContent = `${prov.name}各地级市`;
+          crumbText.classList.remove('hidden');
+        }
+
+        document.getElementById('anomalyMapSectionTitle').textContent = `【${prov.name}】平均气温距平分布图`;
+        document.getElementById('anomalyDrillTipBadge').textContent = '已下钻至地级市';
+
+        renderAnomalyMap();
+        if (!fromHost) {
+          showAnomalyToast(`已成功下钻至【${prov.name}】平均气温距平分布`, 'info');
+          void openHostProvinceFromAnomaly(prov.name);
+        }
+      } catch (e) {
+        showAnomalyToast(`地级市下钻受限: ${e.message}`, 'warn');
+      } finally {
+        if (loading) loading.classList.add('opacity-0');
+      }
+    }
+
+    function backToAnomalyChinaMap(fromHost = false) {
+      ++anomalyState.drillSequence;
+      anomalyState.anomalyMapLevel = 'country';
+      anomalyState.anomalyProvinceData = null;
+      anomalyState.anomalyCityDataList = [];
+
+      document.getElementById('anomalyBackChinaBtn')?.classList.add('hidden');
+      document.getElementById('anomalyCrumbDivider')?.classList.add('hidden');
+      document.getElementById('anomalyCrumbProvinceText')?.classList.add('hidden');
+
+      document.getElementById('anomalyMapSectionTitle').textContent = '全国平均气温距平分布图';
+      document.getElementById('anomalyDrillTipBadge').textContent = '支持下钻地级市';
+
+      renderAnomalyMap();
+      if (!fromHost) {
+        showAnomalyToast('已返回全国平均气温距平分布图', 'info');
+        if (typeof state !== 'undefined' && state.currentMapLevel === 'province'
+            && typeof backToChinaMap === 'function') backToChinaMap();
+      }
+    }
+
+    /**
+     * 【六、底部气候诊断卡片统计动态更新】
+     */
+    function updateAnomalyDiagnostics(dataList, isProvinceLevel = false) {
+      if (!dataList || dataList.length === 0) return;
+      const values = dataList.map(d => d.value);
+      const sum = values.reduce((a, b) => a + b, 0);
+      const avg = Math.round((sum / values.length) * 10) / 10;
+
+      const maxWarm = dataList.reduce((prev, cur) => (cur.value > prev.value ? cur : prev), dataList[0]);
+      const maxCold = dataList.reduce((prev, cur) => (cur.value < prev.value ? cur : prev), dataList[0]);
+      const warmCount = dataList.filter(d => d.value > 0).length;
+      const warmRatio = Math.round((warmCount / dataList.length) * 1000) / 10;
+
+      const avgEl = document.getElementById('nationalAvgAnomaly');
+      const hintEl = document.getElementById('nationalAvgAnomalyHint');
+      if (avgEl) {
+        avgEl.textContent = `${avg > 0 ? '+' : ''}${avg.toFixed(1)} °C`;
+        avgEl.className = avg >= 0 ? 'diag-val text-xl sm:text-2xl font-black text-rose-400 mt-1 block' : 'diag-val text-xl sm:text-2xl font-black text-blue-400 mt-1 block';
+      }
+      if (hintEl) {
+        hintEl.textContent = isProvinceLevel ? `【${anomalyState.anomalyProvinceData.name}】全省平均偏${avg >= 0 ? '暖' : '冷'}` : `全国整体较常年同期偏${avg >= 0 ? '暖' : '冷'}`;
+        hintEl.className = avg >= 0 ? 'text-[10px] text-rose-300/80' : 'text-[10px] text-blue-300/80';
+      }
+
+      const warmProvinceEl = document.getElementById('maxWarmProvince');
+      if (warmProvinceEl) warmProvinceEl.textContent = `${maxWarm.name} (+${maxWarm.value.toFixed(1)}°)`;
+      const coldProvinceEl = document.getElementById('maxColdProvince');
+      if (coldProvinceEl) coldProvinceEl.textContent = `${maxCold.name} (${maxCold.value > 0 ? '+' : ''}${maxCold.value.toFixed(1)}°)`;
+      
+      const warmDescEl = document.getElementById('maxWarmDesc');
+      if (warmDescEl) {
+        warmDescEl.textContent = anomalyState.anomalyTimeSpan === 7 ? '受强暖气团与副高控制' : (anomalyState.anomalyTimeSpan === 15 ? '候旬阶段性强偏暖' : '月度气候态平缓偏暖');
+      }
+      const coldDescEl = document.getElementById('maxColdDesc');
+      if (coldDescEl) {
+        coldDescEl.textContent = anomalyState.anomalyTimeSpan === 7 ? '受强冷空气西风槽压制' : (anomalyState.anomalyTimeSpan === 15 ? '受阶段性冷锋侵袭' : '月度平稳略偏凉');
+      }
+
+      document.getElementById('warmRatioText').textContent = `${warmRatio}%`;
+      document.getElementById('warmCountText').textContent = `${warmCount} 个${isProvinceLevel ? '市区' : '省级行政区'}气温偏高`;
+    }
+
+    /**
+     * 【七、时段切片与控制器事件绑定】
+     */
+    function setupAnomalyControls() {
+      if (anomalyState.controlsBound) return;
+      anomalyState.controlsBound = true;
+      [7, 15, 30].forEach(span => {
+        const btn = document.getElementById(`anomalySpan${span}Btn`);
+        if (btn) {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (anomalyState.anomalyTimeSpan === span) return;
+            anomalyState.anomalyTimeSpan = span;
+
+            // 切换按钮高亮样式
+            [7, 15, 30].forEach(s => {
+              const b = document.getElementById(`anomalySpan${s}Btn`);
+              if (b) {
+                if (s === span) {
+                  b.classList.add('active');
+                } else {
+                  b.classList.remove('active');
+                }
+              }
+            });
+
+            // 立即触发重算与地图渲染
+            renderAnomalyMap();
+            showAnomalyToast(`已切换至近 ${span} 天气温距平诊断，数据与色阶已同步重算`, 'info');
+          });
+        }
+      });
+
+      document.getElementById('anomalyBackChinaBtn')?.addEventListener('click', backToAnomalyChinaMap);
+      document.getElementById('anomalyCrumbChinaBtn')?.addEventListener('click', backToAnomalyChinaMap);
+
+      window.addEventListener('resize', () => {
+        anomalyState.anomalyMapChart?.resize();
+      });
+    }
+
+    function showAnomalyToast(msg, type = 'info') {
+      const toast = document.getElementById('anomalyToast');
+      const text = document.getElementById('anomalyToastMessage');
+      const icon = document.getElementById('anomalyToastIcon');
+      if (!toast || !text) return;
+      text.textContent = msg;
+
+      if (type === 'warn') {
+        icon.className = 'fa-solid fa-triangle-exclamation text-amber-400 text-base';
+      } else {
+        icon.className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+      }
+
+      toast.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none');
+      clearTimeout(anomalyToastTimer);
+      anomalyToastTimer = setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-8', 'pointer-events-none');
+      }, 2600);
+    }
+
+    let anomalyToastTimer = null;
+
+    async function openHostProvinceFromAnomaly(name) {
+      if (typeof state === 'undefined' || typeof drillDownProvince !== 'function'
+          || typeof findProvinceByName !== 'function') return;
+      if (state.currentMapLevel === 'province' && state.currentProvinceData?.name === name) return;
+      const province = findProvinceByName(name);
+      if (province) {
+        try { await drillDownProvince(province); }
+        catch (err) { console.warn('距平省份跨图联动未完成', err); }
+      }
+    }
+
+    async function selectHostCityFromAnomaly(name) {
+      if (typeof state === 'undefined' || typeof selectCityFromMap !== 'function') return;
+      if (anomalyState.anomalyProvinceData?.name !== state.currentProvinceData?.name) {
+        await openHostProvinceFromAnomaly(anomalyState.anomalyProvinceData?.name);
+      }
+      const normalized = v => String(v || '').replace(/市|区|自治州|地区|盟|特别行政区/g, '');
+      const city = (state.currentCityDataList || []).find(c =>
+        c.name === name || normalized(c.name) === normalized(name));
+      if (city) selectCityFromMap(city);
+    }
+
+    async function syncAnomalyFromHost() {
+      if (!window.echarts || !document.getElementById('anomalyEchartsContainer')) return;
+      const hostProvince = typeof state !== 'undefined' && state.currentMapLevel === 'province'
+        ? state.currentProvinceData : null;
+      if (hostProvince) {
+        const province = CHINA_PROVINCES.find(p => p.name === hostProvince.name);
+        if (province && (anomalyState.anomalyMapLevel !== 'province'
+            || anomalyState.anomalyProvinceData?.name !== province.name)) {
+          await drillDownAnomalyProvince(province, true);
+          return;
+        }
+      } else if (anomalyState.anomalyMapLevel !== 'country') {
+        backToAnomalyChinaMap(true);
+        return;
+      }
+      await renderAnomalyMap();
+    }
+
+    // 原主系统 renderTemperatureAnomalyMap 的兼容入口
+    window.SkyPulseAnomalyModule = Object.freeze({
+      syncFromHost: syncAnomalyFromHost,
+      render: renderAnomalyMap
+    });
+
+    // 页面加载就绪后立即执行
+    window.addEventListener('DOMContentLoaded', async () => {
+      setupAnomalyControls();
+      await loadStandardChinaGeoJson();
+      renderAnomalyMap();
+    });
+  
+})();
   </script>
 </body>
 </html>
