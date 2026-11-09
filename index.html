@@ -799,6 +799,7 @@
             <div class="glass-pill p-1 rounded-xl flex items-center gap-1">
               <button id="regionMetricMaxBtn" class="region-metric-btn active-max" type="button"><i class="fa-solid fa-temperature-high mr-1"></i>日最高温</button>
               <button id="regionMetricMinBtn" class="region-metric-btn" type="button"><i class="fa-solid fa-temperature-low mr-1"></i>日最低温</button>
+              <button id="regionMetricBothBtn" class="region-metric-btn" type="button"><i class="fa-solid fa-arrows-up-down mr-1"></i>最高/最低温</button>
             </div>
           </div>
         </div>
@@ -1979,7 +1980,7 @@
       trendChartInstance: null,
       isLoading: false,
       heatmapMode: 'max', // 'max' 最高气温模式, 'min' 最低气温模式
-      regionMetric: 'max', // 全国区域天气矩阵温度维度：max / min
+      regionMetric: 'both', // 全国区域天气矩阵温度维度：max / min / both
       regionSelectedProvince: '陕西',
       regionFilter: '全部区域',
       anomalyRange: 15,
@@ -3674,6 +3675,16 @@
             ? `<i class="fa-solid fa-circle-check text-emerald-300 mr-1"></i>已载入 ${complete}/${uniqueNames.length} 个地区`
             : `<i class="fa-solid fa-triangle-exclamation text-amber-300 mr-1"></i>已载入 ${complete}/${uniqueNames.length} 个地区，部分数据暂不可用`;
         }
+        // 用最近一次接口返回的逐日最高/最低温更新全国热力图；距平图数据源保持独立。
+        uniqueNames.forEach(name => {
+          const province = CHINA_PROVINCES.find(p => p.name === name);
+          const today = state.regionForecastCache[name]?.daily?.[0];
+          if (province && today) {
+            if (Number.isFinite(today.maxTemp)) province.maxTemp = today.maxTemp;
+            if (Number.isFinite(today.minTemp)) province.minTemp = today.minTemp;
+          }
+        });
+        if (typeof updateHeatmapVisuals === 'function') updateHeatmapVisuals();
         renderRegionForecastMatrix();
         if (typeof renderTemperatureAnomalyMap === 'function') renderTemperatureAnomalyMap();
       }
@@ -3770,8 +3781,10 @@
       });
       const maxBtn = document.getElementById('regionMetricMaxBtn');
       const minBtn = document.getElementById('regionMetricMinBtn');
+      const bothBtn = document.getElementById('regionMetricBothBtn');
       if (maxBtn) maxBtn.className = `region-metric-btn ${metric === 'max' ? 'active-max' : ''}`;
       if (minBtn) minBtn.className = `region-metric-btn ${metric === 'min' ? 'active-min' : ''}`;
+      if (bothBtn) bothBtn.className = `region-metric-btn ${metric === 'both' ? 'active-max active-min' : ''}`;
 
       const dateHeaders = days.map(day => {
         const dateText = day.date || '';
@@ -3797,14 +3810,28 @@
         html.push(`<td class="province-sticky province-sparkline-cell" aria-label="${group.name}地区趋势汇总"></td>`);
         html.push(`<td class="period-mean-cell" title="${group.name}所选周期均温，按每日（最高温+最低温）/2计算；周期内超出接口预报范围的日期为趋势估算">${formatRegionalMeanTemperature(regionMean)}</td>`);
         for (let i = 0; i < state.currentRange; i++) {
-          const aggregate = getRegionalGroupDailyAverage(group, i, metric);
-          if (!aggregate) {
-            html.push(`<td class="weather-cell" title="${group.name} ${days[i]?.date || ''}暂无可用数据"><span class="weather-temp" style="color:${metricColor}">—</span><span class="weather-caption">暂无数据</span></td>`);
-            continue;
+          const aggregate = metric === 'both'
+            ? { max: getRegionalGroupDailyAverage(group, i, 'max'), min: getRegionalGroupDailyAverage(group, i, 'min') }
+            : getRegionalGroupDailyAverage(group, i, metric);
+          if (metric === 'both') {
+            if (!aggregate.max && !aggregate.min) {
+              html.push(`<td class="weather-cell"><span class="weather-temp">—</span><span class="weather-caption">暂无数据</span></td>`);
+              continue;
+            }
+            const hi = aggregate.max ? formatRegionalMeanTemperature(aggregate.max.value) : '—';
+            const lo = aggregate.min ? formatRegionalMeanTemperature(aggregate.min.value) : '—';
+            html.push(`<td class="weather-cell" title="【${group.name}区域汇总】${days[i]?.date || ''} 最高温均值 ${hi} / 最低温均值 ${lo}">
+              <span class="weather-temp" style="color:#c2410c">↑ ${hi}</span><span class="weather-temp" style="color:#0369a1">↓ ${lo}</span>
+              <span class="weather-caption">区域最高 / 最低均值</span></td>`);
+          } else {
+            if (!aggregate) {
+              html.push(`<td class="weather-cell" title="${group.name} ${days[i]?.date || ''}暂无可用数据"><span class="weather-temp" style="color:${metricColor}">—</span><span class="weather-caption">暂无数据</span></td>`);
+              continue;
+            }
+            const shownTemp = formatRegionalMeanTemperature(aggregate.value);
+            const title = `【${group.name}区域汇总】${days[i]?.date || ''} ${metricName}均值 ${shownTemp} · 天气代表类型：${aggregate.dominantCategory}`;
+            html.push(`<td class="weather-cell" title="${title}"><span class="weather-temp" style="color:${metricColor}">${shownTemp}</span><span class="weather-caption">${aggregate.dominantCategory}为主</span></td>`);
           }
-          const shownTemp = formatRegionalMeanTemperature(aggregate.value);
-          const title = `【${group.name}区域汇总】${days[i]?.date || ''} ${metricName}均值 ${shownTemp} · 天气代表类型：${aggregate.dominantCategory}`;
-          html.push(`<td class="weather-cell" title="${title}"><span class="weather-temp" style="color:${metricColor}">${shownTemp}</span><span class="weather-caption">${aggregate.dominantCategory}为主</span></td>`);
         }
         html.push('</tr>');
 
@@ -3820,16 +3847,20 @@
           html.push(`<td class="period-mean-cell" title="${provinceName}所选周期均温，按每日（最高温+最低温）/2计算；周期内超出接口预报范围的日期为趋势估算">${formatRegionalMeanTemperature(getRegionalPeriodMean(daily.slice(0, state.currentRange)))}</td>`);
           for (let i = 0; i < state.currentRange; i++) {
             const day = daily[i];
-            if (!day || !Number.isFinite(day[metric === 'max' ? 'maxTemp' : 'minTemp'])) {
+            const hasMax = day && Number.isFinite(day.maxTemp);
+            const hasMin = day && Number.isFinite(day.minTemp);
+            if (!day || (metric === 'max' && !hasMax) || (metric === 'min' && !hasMin) || (metric === 'both' && !hasMax && !hasMin)) {
               html.push(`<td class="weather-cell" title="${provinceName}天气数据暂不可用"><span class="weather-temp" style="color:#64748b">—</span><span class="weather-caption">暂无数据</span></td>`);
               continue;
             }
-            const temp = metric === 'max' ? day.maxTemp : day.minTemp;
             const info = parseWeatherCode(day.weatherCode, 1);
             const estimateTag = day.estimated ? '（趋势估算）' : '（接口逐日预报）';
-            const title = `【${group.name} / ${provinceName}】${day.date} ${metricName} ${temp}°C · 天气：${info.text} · 最高温 ${day.maxTemp}°C · 最低温 ${day.minTemp}°C · 降水概率 ${day.precipitationProb}% ${estimateTag}`;
+            const title = `【${group.name} / ${provinceName}】${day.date} · 最高温 ${day.maxTemp}°C · 最低温 ${day.minTemp}°C · 天气：${info.text} · 降水概率 ${day.precipitationProb}% ${estimateTag}`;
             const cellClass = day.estimated ? 'estimated-weather-cell' : '';
-            html.push(`<td class="weather-cell ${cellClass}" title="${title}">${regionalWeatherIcon(day.weatherCode)}<span class="weather-temp" style="color:${metricColor}">${convertTemp(temp)}°${state.unit}</span><span class="weather-caption">${info.text}${day.estimated ? ' · 推演' : ''}</span></td>`);
+            const tempMarkup = metric === 'both'
+              ? `<span class="weather-temp" style="color:#c2410c">↑ ${hasMax ? `${convertTemp(day.maxTemp)}°${state.unit}` : '—'}</span><span class="weather-temp" style="color:#0369a1">↓ ${hasMin ? `${convertTemp(day.minTemp)}°${state.unit}` : '—'}</span>`
+              : `<span class="weather-temp" style="color:${metricColor}">${convertTemp(metric === 'max' ? day.maxTemp : day.minTemp)}°${state.unit}</span>`;
+            html.push(`<td class="weather-cell ${cellClass}" title="${title}">${regionalWeatherIcon(day.weatherCode)}${tempMarkup}<span class="weather-caption">${info.text}${day.estimated ? ' · 推演' : ''}</span></td>`);
           }
           html.push('</tr>');
         });
@@ -3852,24 +3883,48 @@
       renderRegionalTrendDetail();
     }
 
+    function getRegionalAggregateDaily(group) {
+      if (!group) return [];
+      const reference = group.provinces.map(name => state.regionForecastCache[name]?.daily || []).find(days => days.length) || [];
+      return reference.slice(0, state.currentRange).map((refDay, index) => {
+        const records = group.provinces.map(name => state.regionForecastCache[name]?.daily?.[index]).filter(Boolean);
+        const mean = key => {
+          const values = records.map(day => day[key]).filter(Number.isFinite);
+          return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+        };
+        const codes = {};
+        records.forEach(day => { const c = regionalWeatherCategory(day.weatherCode); codes[c] = (codes[c] || 0) + 1; });
+        const dominant = Object.keys(codes).sort((a,b) => codes[b] - codes[a])[0] || '多云';
+        const representative = records.find(day => regionalWeatherCategory(day.weatherCode) === dominant);
+        return {
+          ...refDay, maxTemp: mean('maxTemp'), minTemp: mean('minTemp'),
+          meanTemp: mean('meanTemp'), weatherCode: representative?.weatherCode ?? 3,
+          precipitationProb: records.length ? Math.round(records.reduce((a,d) => a + (d.precipitationProb || 0), 0) / records.length) : 0,
+          regionCount: records.length, regionTotal: group.provinces.length,
+          estimated: records.length > 0 && records.every(day => day.estimated)
+        };
+      });
+    }
+
     function renderRegionalTrendDetail(forceGroupName = null, forceProvinceName = null) {
       const provinceName = forceProvinceName || state.regionSelectedProvince;
       const group = REGIONAL_FORECAST_GROUPS.find(g => g.provinces.includes(provinceName));
       const groupName = forceGroupName || group?.name || '区域';
       const forecast = state.regionForecastCache[provinceName];
-      const daily = (forecast?.daily || []).slice(0, state.currentRange);
+      const daily = getRegionalAggregateDaily(group);
       const metric = state.regionMetric;
-      const metricName = metric === 'max' ? '日最高温' : '日最低温';
+      const metricName = metric === 'both' ? '日最高温 / 日最低温' : (metric === 'max' ? '日最高温' : '日最低温');
       const title = document.getElementById('regionTrendTitle');
-      if (title) title.textContent = `【${groupName} / ${provinceName}】未来 ${state.currentRange} 天${metricName}走势`;
+      if (title) title.textContent = `【${groupName}】未来 ${state.currentRange} 天区域气温走势`;
       const subtitle = document.getElementById('regionTrendSubtitle');
-      if (subtitle) subtitle.textContent = `${provinceName}（省会/地区代表点）逐日天气数据 · 已同步矩阵周期与温度维度`;
+      if (subtitle) subtitle.textContent = `按${groupName}所辖地区逐日汇总（各省级代表点均值）· 不按单一城市展示 · 已同步矩阵周期`;
       const caption = document.getElementById('regionTrendChartCaption');
-      if (caption) caption.textContent = `${provinceName}未来 ${state.currentRange} 天${metricName}走势趋势图`;
+      if (caption) caption.textContent = `${groupName}未来 ${state.currentRange} 天区域最高温 / 最低温走势`;
       const sourceBadge = document.getElementById('regionTrendSourceBadge');
       if (sourceBadge) {
         const estimatedCount = daily.filter(d => d.estimated).length;
-        sourceBadge.textContent = forecast?.failed ? '数据获取失败' : (forecast?.daily?.length ? (estimatedCount ? `接口预报 + ${estimatedCount} 天趋势估算` : '接口逐日预报') : '等待数据');
+        const loaded = group ? group.provinces.filter(name => state.regionForecastCache[name]?.daily?.length).length : 0;
+        sourceBadge.textContent = loaded ? `区域汇总 ${loaded}/${group.provinces.length} 地区${estimatedCount ? ` · ${estimatedCount} 天含趋势估算` : ' · 接口预报'}` : '等待数据';
       }
 
       const stats = document.getElementById('regionSelectedStats');
@@ -3877,7 +3932,7 @@
         if (!daily.length) {
           stats.innerHTML = ['周期均温','周期最高温','周期最低温','雨雪天数'].map(label => `<div class="region-stat-card"><div class="region-stat-label">${label}</div><div class="region-stat-value">—</div></div>`).join('');
         } else {
-          const vals = daily.map(d => metric === 'max' ? d.maxTemp : d.minTemp).filter(Number.isFinite);
+          const vals = daily.map(d => metric === 'min' ? d.minTemp : d.maxTemp).filter(Number.isFinite);
           const avg = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
           const maxTemp = Math.max(...daily.map(d => d.maxTemp).filter(Number.isFinite));
           const minTemp = Math.min(...daily.map(d => d.minTemp).filter(Number.isFinite));
@@ -3905,20 +3960,40 @@
             type: 'line',
             data: {
               labels: daily.map(d => `${d.dateStr} ${d.weekday}`),
-              datasets: [{
-                label: metricName,
-                data: daily.map(d => convertTemp(metric === 'max' ? d.maxTemp : d.minTemp)),
-                borderColor: lineColor,
-                backgroundColor: fill,
+              datasets: (metric === 'both' ? [
+                { label: '区域日最高温', key: 'maxTemp', color: '#f59e0b' },
+                { label: '区域日最低温', key: 'minTemp', color: '#0ea5e9' }
+              ] : [{ label: metricName, key: metric === 'max' ? 'maxTemp' : 'minTemp', color: lineColor }]).map((series, index) => ({
+                label: series.label,
+                data: daily.map(d => Number.isFinite(d[series.key]) ? Number(convertTemp(d[series.key]).toFixed(1)) : null),
+                borderColor: series.color,
+                backgroundColor: series.color + '22',
                 borderWidth: 2.5,
                 pointRadius: state.currentRange > 15 ? 2 : 3,
                 pointHoverRadius: 5,
-                pointBackgroundColor: lineColor,
-                fill: true,
+                pointBackgroundColor: series.color,
+                fill: false,
                 tension: .32,
                 spanGaps: true
-              }]
+              }))
             },
+            plugins: [{
+              id: 'regionalTemperatureValueLabels',
+              afterDatasetsDraw(chart) {
+                const c = chart.ctx;
+                c.save(); c.font = '10px sans-serif'; c.textAlign = 'center';
+                chart.data.datasets.forEach((dataset, di) => {
+                  const meta = chart.getDatasetMeta(di);
+                  meta.data.forEach((point, i) => {
+                    const value = dataset.data[i];
+                    if (value === null || value === undefined || !Number.isFinite(Number(value))) return;
+                    c.fillStyle = dataset.borderColor;
+                    c.fillText(`${Number(value).toFixed(1)}°`, point.x, point.y + (di === 0 ? -10 : 15));
+                  });
+                });
+                c.restore();
+              }
+            }],
             options: {
               responsive: true,
               maintainAspectRatio: false,
@@ -3982,6 +4057,7 @@
       });
       const maxBtn = document.getElementById('regionMetricMaxBtn');
       const minBtn = document.getElementById('regionMetricMinBtn');
+      const bothBtn = document.getElementById('regionMetricBothBtn');
       if (maxBtn) maxBtn.addEventListener('click', () => {
         if (state.regionMetric === 'max') return;
         state.regionMetric = 'max';
@@ -3993,6 +4069,12 @@
         state.regionMetric = 'min';
         renderRegionForecastMatrix();
         showToast('区域天气矩阵已切换至日最低温', 'info');
+      });
+      if (bothBtn) bothBtn.addEventListener('click', () => {
+        if (state.regionMetric === 'both') return;
+        state.regionMetric = 'both';
+        renderRegionForecastMatrix();
+        showToast('区域天气矩阵已同时显示最高温与最低温', 'info');
       });
     }
 
@@ -8127,7 +8209,6 @@
         renderAnomalyMap();
         if (!fromHost) {
           showAnomalyToast(`已成功下钻至【${prov.name}】平均气温距平分布`, 'info');
-          void openHostProvinceFromAnomaly(prov.name);
         }
       } catch (e) {
         showAnomalyToast(`地级市下钻受限: ${e.message}`, 'warn');
@@ -8152,8 +8233,7 @@
       renderAnomalyMap();
       if (!fromHost) {
         showAnomalyToast('已返回全国平均气温距平分布图', 'info');
-        if (typeof state !== 'undefined' && state.currentMapLevel === 'province'
-            && typeof backToChinaMap === 'function') backToChinaMap();
+        // 距平地图独立导航，不改变全国实时气温热力地图的下钻状态。
       }
     }
 
