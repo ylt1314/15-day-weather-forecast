@@ -515,6 +515,32 @@
     @media(max-width:640px) { #skyPageNavigation .sky-nav-glass { gap:4px; padding:8px; } #skyPageNavigation .sky-nav-link { padding:10px 9px; font-size:14px; gap:6px; } }
     html { scroll-behavior:smooth; scroll-padding-top:84px; }
 
+
+    /* 三模块定向增强：地图下方独立浅色图表、横向城市搜索 */
+    .sp-chart-panel {
+      background:#fff; border:1px solid #dce6f0; border-radius:17px;
+      color:#263c56; padding:17px 17px 12px; box-shadow:0 8px 24px rgba(27,54,93,.09);
+    }
+    .sp-chart-head { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; }
+    .sp-chart-title { margin:0; font-size:15px; line-height:1.5; font-weight:850; color:#213750; }
+    .sp-chart-subtitle { margin:3px 0 0; font-size:11px; color:#6b8097; line-height:1.7; }
+    .sp-chart-legend { display:flex; align-items:center; flex-wrap:wrap; gap:13px; font-size:11px; color:#64748b; }
+    .sp-chart-legend span { display:inline-flex; align-items:center; gap:6px; }
+    .sp-chart-dot { width:9px; height:9px; display:inline-block; border-radius:50%; }
+    .sp-chart-scroll { width:100%; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; margin-top:12px; padding-bottom:5px; scrollbar-color:#c9d9e9 transparent; scrollbar-width:thin; }
+    .sp-chart-scroll svg { display:block; max-width:none; font-family:'Plus Jakarta Sans','Noto Sans SC',sans-serif; }
+    .sp-chart-hint { margin:6px 2px 0; font-size:10px; line-height:1.6; color:#8797a8; }
+    .sp-chart-scroll:focus-visible { outline:2px solid #38bdf8; outline-offset:2px; border-radius:5px; }
+    .sp-live-search { position:relative; width:100%; max-width:350px; }
+    .sp-live-search-input-wrap { display:flex; align-items:center; gap:9px; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.32); border-radius:13px; padding:9px 12px; transition:border-color .2s,box-shadow .2s; }
+    .sp-live-search-input-wrap:focus-within { border-color:#7dd3fc; box-shadow:0 0 0 3px rgba(125,211,252,.16); }
+    .sp-live-search-input { background:transparent; color:#fff; font-size:12px; border:none; outline:none; flex:1; min-width:0; width:100%; }
+    .sp-live-search-input::placeholder { color:rgba(255,255,255,.68); }
+    .sp-live-search-dropdown { position:absolute; z-index:70; top:calc(100% + 6px); right:0; left:0; max-height:225px; overflow-y:auto; border:1px solid #d7e4f1; border-radius:13px; padding:5px; background:#fff; color:#263c56; box-shadow:0 18px 40px rgba(12,40,80,.28); }
+    .sp-live-search-result { width:100%; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 10px; border:0; border-radius:8px; background:transparent; color:#243b55; cursor:pointer; font-size:12px; text-align:left; }
+    .sp-live-search-result:hover,.sp-live-search-result:focus,.sp-live-search-result[aria-selected="true"] { background:#eaf4ff; outline:none; }
+    .sp-live-search-result small { font-size:10px; color:#71859b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:48%; }
+    @media(max-width:640px) { .sp-chart-panel { padding:14px 11px 10px; } .sp-chart-title { font-size:13px; } .sp-chart-legend { gap:9px; } .sp-live-search { max-width:none; } }
   </style>
 </head>
 <body id="appBody" class="min-h-screen text-white font-sans antialiased theme-sunny transition-colors duration-700 relative overflow-x-hidden selection:bg-amber-400 selection:text-slate-900">
@@ -684,6 +710,25 @@
           <span id="mapLoadingText" class="text-xs text-slate-700 font-semibold">正在同步全国 34 省级行政区高精度气象测算...</span>
         </div>
       </div>
+
+      <!-- 新增：省级/地级市最高最低温滑珠区间图（独立于上方热力地图） -->
+      <div id="temperatureDumbbellSection" class="sp-chart-panel">
+        <div class="sp-chart-head">
+          <div>
+            <h3 id="temperatureDumbbellTitle" class="sp-chart-title">全国各省最高 / 最低气温滑珠图</h3>
+            <p id="temperatureDumbbellSubtitle" class="sp-chart-subtitle">同一刻度对照各省最低温与最高温 · 两端均显示温度标签</p>
+          </div>
+          <div class="sp-chart-legend" aria-label="温度图例">
+            <span><i class="sp-chart-dot" style="background:#0284c7"></i>最低温</span>
+            <span><i class="sp-chart-dot" style="background:#e76f51"></i>最高温</span>
+            <span id="temperatureDumbbellModeText" style="font-weight:750;color:#bd5a3f">当前地图：最高温</span>
+          </div>
+        </div>
+        <div id="temperatureDumbbellScroller" class="sp-chart-scroll" tabindex="0" aria-label="左右滚动查看全部省份或地级市的气温滑珠图">
+          <div id="temperatureDumbbellChart"></div>
+        </div>
+        <p class="sp-chart-hint">左右滚动查看全部地区；圆点为最高 / 最低气温，连线为温差区间。数据与上方地图保持一致。</p>
+      </div>
     </section>
 
     <!-- SkyPulse 距平组件：完整接入独立版本，其他业务板块保持原样 -->
@@ -761,6 +806,25 @@
           <i class="fa-solid fa-circle-notch fa-spin text-3xl text-indigo-600 mb-2"></i>
           <span id="anomalyLoadingText" class="text-xs text-slate-700 font-semibold">正在计算全国气象站气候平均值与距平偏差...</span>
         </div>
+      </div>
+
+      <!-- 新增：纵向正负轴距平棒棒糖图，独立占据地图下方一整行 -->
+      <div id="anomalyLollipopSection" class="sp-chart-panel">
+        <div class="sp-chart-head">
+          <div>
+            <h3 id="anomalyLollipopTitle" class="sp-chart-title">全国各省气温距平正负棒棒糖图</h3>
+            <p id="anomalyLollipopSubtitle" class="sp-chart-subtitle">近 15 天 · 以 0°C 为基线，正距平向上、负距平向下</p>
+          </div>
+          <div class="sp-chart-legend" aria-label="距平图例">
+            <span><i class="sp-chart-dot" style="background:#e76f51"></i>正距平 · 偏暖</span>
+            <span><i class="sp-chart-dot" style="background:#3d8bd9"></i>负距平 · 偏冷</span>
+            <span style="color:#52677e;font-weight:750">0°C 基线</span>
+          </div>
+        </div>
+        <div id="anomalyLollipopScroller" class="sp-chart-scroll" tabindex="0" aria-label="左右滚动查看全部省份或地级市的纵向正负距平棒棒糖图">
+          <div id="anomalyLollipopChart"></div>
+        </div>
+        <p class="sp-chart-hint">省份/地级市横向排列，数据标签位于棒棒糖顶端；切换 7 / 15 / 30 天及地图下钻时自动更新。</p>
       </div>
 
       <!-- 4. 底部气温距平诊断核心看板 -->
@@ -919,6 +983,20 @@
     <div class="city-live-horizontal-grid">
     <!-- 实时天气概览 Hero 卡片 -->
     <section id="city-weather-section" class="glass-card rounded-3xl p-6 sm:p-8 relative overflow-hidden city-live-hero">
+
+      <!-- 横向实时城市气象看板专属城市搜索（不替换顶部全局搜索） -->
+      <div class="flex justify-end relative z-30 mb-5">
+        <div id="liveCitySearchShell" class="sp-live-search">
+          <label for="liveCitySearchInput" class="block text-[11px] font-bold text-white/80 mb-1.5">
+            <i class="fa-solid fa-location-dot text-cyan-200 mr-1"></i>切换实时看板城市
+          </label>
+          <div class="sp-live-search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass text-cyan-100 text-xs" aria-hidden="true"></i>
+            <input id="liveCitySearchInput" type="search" class="sp-live-search-input" placeholder="搜索城市，如：北京、上海、成都..." autocomplete="off" aria-controls="liveCitySearchResults" aria-expanded="false" aria-autocomplete="list">
+          </div>
+          <div id="liveCitySearchResults" class="sp-live-search-dropdown hidden" role="listbox" aria-label="城市搜索结果"></div>
+        </div>
+      </div>
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         <!-- 城市与实时温度核心信息 -->
         <div class="lg:col-span-7 space-y-4">
@@ -2357,8 +2435,91 @@
       }));
     }
 
+
+    // 定向新增图表一：各省/地级市最低与最高温滑珠区间；仅读取现有地图状态。
+    function renderTemperatureDumbbellChart() {
+      const target = document.getElementById('temperatureDumbbellChart');
+      const scroll = document.getElementById('temperatureDumbbellScroller');
+      if (!target || !scroll) return;
+      const isDrilled = state.currentMapLevel === 'province' && !!state.currentProvinceData;
+      const records = (isDrilled ? state.currentCityDataList
+        : CHINA_PROVINCES.filter(p => p.name !== '南海诸岛'))
+        .filter(p => Number.isFinite(p.minTemp) && Number.isFinite(p.maxTemp));
+      const areaName = isDrilled ? state.currentProvinceData.name : '全国';
+      const title = document.getElementById('temperatureDumbbellTitle');
+      const subtitle = document.getElementById('temperatureDumbbellSubtitle');
+      const mode = document.getElementById('temperatureDumbbellModeText');
+      const unit = state.unit === 'F' ? '°F' : '°C';
+      if (title) title.textContent = isDrilled
+        ? `【${areaName}】各地级市最高 / 最低气温滑珠图`
+        : '全国各省最高 / 最低气温滑珠图';
+      if (subtitle) subtitle.textContent = `共 ${records.length} 个地区 · 纵向同轴对照最低温和最高温（${unit}）`;
+      if (mode) {
+        mode.textContent = `当前地图：${state.heatmapMode === 'min' ? '最低温' : '最高温'}`;
+        mode.style.color = state.heatmapMode === 'min' ? '#0284c7' : '#bd5a3f';
+      }
+      target.replaceChildren();
+      if (!records.length) {
+        const empty = document.createElement('p');
+        empty.textContent = '当前地区暂无可展示的气温区间数据';
+        empty.style.cssText = 'padding:42px 10px;text-align:center;color:#64748b;font-size:12px';
+        target.appendChild(empty);
+        return;
+      }
+      const series = records.map(d => ({
+        name: String(d.name || ''),
+        min: convertTemp(d.minTemp),
+        max: convertTemp(d.maxTemp)
+      }));
+      const ticksStep = state.unit === 'F' ? 10 : 5;
+      let minAxis = Math.floor(Math.min(...series.map(d => d.min)) / ticksStep) * ticksStep;
+      let maxAxis = Math.ceil(Math.max(...series.map(d => d.max)) / ticksStep) * ticksStep;
+      if (minAxis === maxAxis) maxAxis += ticksStep;
+      const W = Math.max(740, series.length * (isDrilled ? 93 : 73) + 72);
+      const H = 342, L = 54, R = 16, T = 43, B = 61, bottom = H-B;
+      const column = (W-L-R) / series.length;
+      const y = value => bottom - (value-minAxis)/(maxAxis-minAxis)*(bottom-T);
+      const ns = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(ns,'svg');
+      svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+      svg.setAttribute('width', W);
+      svg.setAttribute('height', H);
+      svg.setAttribute('role','img');
+      svg.setAttribute('aria-label', `${areaName}最高最低温滑珠图，${series.length}个地区，单位${unit}`);
+      const add = (parent,tag,attrs={},text) => {
+        const el = document.createElementNS(ns,tag);
+        for (const [key,val] of Object.entries(attrs)) el.setAttribute(key,String(val));
+        if (text !== undefined) el.textContent = text;
+        parent.appendChild(el);
+        return el;
+      };
+      add(svg,'text',{x:12,y:21,fill:'#7a8ca2','font-size':11,'font-weight':700},`气温 ${unit}`);
+      for (let i=0;i<=4;i++) {
+        const val = minAxis+(maxAxis-minAxis)*i/4;
+        const gy = y(val);
+        add(svg,'line',{x1:L,y1:gy,x2:W-R,y2:gy,stroke:'#eaf0f6','stroke-width':1});
+        add(svg,'text',{x:L-10,y:gy+4,'text-anchor':'end',fill:'#8494a7','font-size':10},`${Number(val.toFixed(1))}°`);
+      }
+      series.forEach((d,i) => {
+        const x = L+(i+.5)*column, yMin=y(d.min), yMax=y(d.max);
+        const g = add(svg,'g');
+        add(g,'title',{},`${d.name}：最低 ${d.min}${unit}；最高 ${d.max}${unit}`);
+        add(g,'line',{x1:x,y1:yMax,x2:x,y2:yMin,stroke:'#a6bdd1','stroke-width':5,'stroke-linecap':'round'});
+        const maxActive = state.heatmapMode === 'max';
+        add(g,'circle',{cx:x,cy:yMin,r:maxActive?5.6:7.2,fill:'#0284c7',stroke:'#fff','stroke-width':2.5});
+        add(g,'circle',{cx:x,cy:yMax,r:maxActive?7.2:5.6,fill:'#e76f51',stroke:'#fff','stroke-width':2.5});
+        add(g,'text',{x,y:Math.max(17,yMax-13),'text-anchor':'middle',fill:'#c35a3d','font-size':11,'font-weight':800},`${d.max}°`);
+        add(g,'text',{x,y:Math.min(H-45,yMin+19),'text-anchor':'middle',fill:'#0878aa','font-size':11,'font-weight':800},`${d.min}°`);
+        const shortName = d.name.length > (isDrilled ? 7 : 5)
+          ? `${d.name.slice(0,isDrilled ? 6 : 4)}…` : d.name;
+        add(g,'text',{x,y:H-22,'text-anchor':'middle',fill:'#3d526c','font-size':isDrilled?10:11,'font-weight':700},shortName);
+      });
+      target.appendChild(svg);
+    }
+
     // 动态同步热力图数据与视觉映射 (支持全国层级与地级市下钻层级)
     function updateHeatmapVisuals() {
+      renderTemperatureDumbbellChart();
       if (!chinaMapChart) return;
       const isMax = state.heatmapMode === 'max';
 
@@ -2667,6 +2828,7 @@
         state.currentProvinceData = prov;
 
         buildProvinceCitiesData(prov, geoJson);
+        renderTemperatureDumbbellChart();
         renderProvinceMap();
         renderTemperatureAnomalyMap();
 
@@ -2901,6 +3063,7 @@
       }
 
       buildEchartsInstance();
+      renderTemperatureDumbbellChart();
       renderTemperatureAnomalyMap();
       showToast('已返回全国气温热力分布地图', 'info');
     }
@@ -7532,6 +7695,125 @@
       }
     });
 
+
+    // 横向实时城市看板独立搜索：复用现有城市数据与 fetchWeatherData，不影响顶部搜索器。
+    function setupLiveCitySearch() {
+      const shell = document.getElementById('liveCitySearchShell');
+      const input = document.getElementById('liveCitySearchInput');
+      const popup = document.getElementById('liveCitySearchResults');
+      if (!shell || !input || !popup || shell.dataset.searchBound === 'true') return;
+      shell.dataset.searchBound = 'true';
+      let matches = [], activeIndex = -1, searchTimer = null, requestController = null, sequence = 0;
+      const catalog = [...TIER_CITIES, ...HOT_CITIES].filter((city, index, all) =>
+        all.findIndex(item => item.name === city.name &&
+          Math.abs(item.latitude - city.latitude) < .01 &&
+          Math.abs(item.longitude - city.longitude) < .01) === index);
+      function close() {
+        popup.classList.add('hidden');
+        input.setAttribute('aria-expanded','false');
+        activeIndex = -1;
+      }
+      function select(city) {
+        if (!city || !Number.isFinite(city.latitude) || !Number.isFinite(city.longitude)) return;
+        state.currentCity = city;
+        input.value = '';
+        matches = [];
+        close();
+        fetchWeatherData(city);
+      }
+      function showResults(items, textIfEmpty = '未找到匹配的城市，请尝试完整城市名称') {
+        matches = items.slice(0, 10);
+        activeIndex = -1;
+        popup.replaceChildren();
+        if (!matches.length) {
+          const msg = document.createElement('div');
+          msg.style.cssText = 'padding:13px 10px;text-align:center;font-size:11px;color:#71859b';
+          msg.textContent = textIfEmpty;
+          popup.appendChild(msg);
+        }
+        matches.forEach((city, i) => {
+          const option = document.createElement('button');
+          option.type = 'button';
+          option.className = 'sp-live-search-result';
+          option.setAttribute('role', 'option');
+          option.setAttribute('aria-selected', 'false');
+          const name = document.createElement('strong');
+          name.textContent = city.name;
+          const location = document.createElement('small');
+          location.textContent = city.country || city.admin1 || '中国';
+          option.append(name, location);
+          option.addEventListener('click', () => select(city));
+          popup.appendChild(option);
+        });
+        popup.classList.remove('hidden');
+        input.setAttribute('aria-expanded','true');
+      }
+      function localMatches(query) {
+        const q = query.toLocaleLowerCase();
+        return catalog.filter(c =>
+          c.name.toLocaleLowerCase().includes(q) ||
+          (c.country || '').toLocaleLowerCase().includes(q)
+        );
+      }
+      function search(value) {
+        const query = value.trim();
+        clearTimeout(searchTimer);
+        if (requestController) { requestController.abort(); requestController = null; }
+        const ticket = ++sequence;
+        if (!query) { matches = []; close(); return; }
+        const locals = localMatches(query);
+        showResults(locals, locals.length ? '' : '正在查找其他城市…');
+        searchTimer = setTimeout(async () => {
+          const controller = new AbortController();
+          requestController = controller;
+          try {
+            const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=zh&format=json`, {signal:controller.signal});
+            if (!res.ok) throw new Error('geocoding unavailable');
+            const json = await res.json();
+            if (ticket !== sequence || input.value.trim() !== query) return;
+            const remote = (json.results || []).filter(r =>
+              Number.isFinite(r.latitude) && Number.isFinite(r.longitude))
+              .map(r => ({
+                name:r.name, country:[r.admin1,r.country].filter(Boolean).join(' · ') || '其他地区',
+                latitude:r.latitude, longitude:r.longitude
+              }));
+            const combined = [...locals];
+            remote.forEach(r => {
+              if (!combined.some(c =>
+                Math.abs(c.latitude-r.latitude)<.1 && Math.abs(c.longitude-r.longitude)<.1)) combined.push(r);
+            });
+            showResults(combined);
+          } catch (error) {
+            if (ticket === sequence && !controller.signal.aborted)
+              showResults(locals);
+          } finally {
+            if (requestController === controller) requestController = null;
+          }
+        }, 260);
+      }
+      input.addEventListener('input', () => search(input.value));
+      input.addEventListener('focus', () => { if (input.value.trim()) search(input.value); });
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { close(); return; }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          if (!matches.length || popup.classList.contains('hidden')) return;
+          e.preventDefault();
+          activeIndex = e.key === 'ArrowDown'
+            ? (activeIndex+1) % matches.length
+            : (activeIndex+matches.length-1) % matches.length;
+          const options = popup.querySelectorAll('[role="option"]');
+          options.forEach((el,i) => el.setAttribute('aria-selected',String(i===activeIndex)));
+          options[activeIndex]?.scrollIntoView({block:'nearest'});
+        } else if (e.key === 'Enter' && matches.length && !popup.classList.contains('hidden')) {
+          e.preventDefault();
+          select(matches[activeIndex < 0 ? 0 : activeIndex]);
+        }
+      });
+      document.addEventListener('pointerdown', e => {
+        if (!shell.contains(e.target)) close();
+      });
+    }
+
     // 热门城市快捷栏生成
     function renderHotCitiesList() {
       const container = document.getElementById('hotCitiesContainer');
@@ -7851,7 +8133,9 @@
       window.setInterval(() => safeInit('动态日期刷新', () => syncDynamicDateAndObservedDays()), 60 * 1000);
       safeInit('全国地图同步', () => ensureSyncChinaMap());
       safeInit('热门城市栏', () => initHotCitiesBar());
+      safeInit('实时城市看板搜索', () => setupLiveCitySearch());
       safeInit('热力图控件', () => setupHeatmapControls());
+      safeInit('省级气温滑珠图', () => renderTemperatureDumbbellChart());
       safeInit('全国气温热力图', () => initChinaTemperatureHeatMap());
       safeInit('距平图控件', () => setupTemperatureAnomalyControls());
       window.setTimeout(() => safeInit('距平图渲染', () => renderTemperatureAnomalyMap()), 350);
@@ -8080,10 +8364,93 @@
       return null;
     }
 
+
+    // 定向新增图表二：沿纵轴向上/向下的正负距平棒棒糖，零线水平贯穿。
+    // 与该模块原有的省级/地级市计算结果直接复用，避免图表与地图数值不一致。
+    function renderAnomalyLollipopChart(data, isProvinceLevel) {
+      const target = document.getElementById('anomalyLollipopChart');
+      if (!target) return;
+      const span = anomalyState.anomalyTimeSpan;
+      const areaName = isProvinceLevel ? anomalyState.anomalyProvinceData.name : '全国';
+      const heading = document.getElementById('anomalyLollipopTitle');
+      const subtitle = document.getElementById('anomalyLollipopSubtitle');
+      if (heading) heading.textContent = isProvinceLevel
+        ? `【${areaName}】地级市气温距平正负棒棒糖图`
+        : '全国各省气温距平正负棒棒糖图';
+      if (subtitle) subtitle.textContent = `近 ${span} 天 · ${data.filter(d => Number.isFinite(d.value) && d.name !== '南海诸岛').length} 个地区 · 横向 0°C 基线，上方偏暖，下方偏冷`;
+      target.replaceChildren();
+      const rows = data.filter(d => Number.isFinite(d.value) && d.name !== '南海诸岛');
+      if (!rows.length) {
+        const empty = document.createElement('p');
+        empty.textContent = '当前地区暂无距平数据';
+        empty.style.cssText = 'padding:42px 10px;text-align:center;color:#64748b;font-size:12px';
+        target.appendChild(empty);
+        return;
+      }
+      const W = Math.max(740, rows.length * (isProvinceLevel ? 94 : 73) + 72);
+      const H = 356, L = 54, R = 16, T = 45, B = 62, bot = H-B;
+      const zeroY = (T+bot)/2;
+      const maxValue = Math.max(0.5, ...rows.map(r => Math.abs(r.value)));
+      const axisMax = Math.max(1, Math.ceil(maxValue));
+      const y = value => zeroY-value/axisMax*(zeroY-T);
+      const col = (W-L-R)/rows.length;
+      const ns = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(ns,'svg');
+      svg.setAttribute('width',W); svg.setAttribute('height',H);
+      svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+      svg.setAttribute('role','img');
+      svg.setAttribute('aria-label',`${areaName}近${span}天正负距平棒棒糖图，${rows.length}个地区，0摄氏度为基准`);
+      const add = (parent,tag,attrs={},text) => {
+        const el = document.createElementNS(ns,tag);
+        for(const [key,val] of Object.entries(attrs)) el.setAttribute(key,String(val));
+        if (text !== undefined) el.textContent = text;
+        parent.appendChild(el);
+        return el;
+      };
+      add(svg,'text',{x:12,y:21,fill:'#7a8ca2','font-size':11,'font-weight':700},'距平 °C');
+      [axisMax,axisMax/2,0,-axisMax/2,-axisMax].forEach(tick => {
+        const yy = y(tick);
+        add(svg,'line',{
+          x1:L,y1:yy,x2:W-R,y2:yy,
+          stroke:tick===0?'#748aa3':'#eaf0f6',
+          'stroke-width':tick===0?1.8:1
+        });
+        add(svg,'text',{x:L-10,y:yy+4,'text-anchor':'end',fill:tick===0?'#42566e':'#8899ac','font-size':10,'font-weight':tick===0?800:500},
+          `${tick>0?'+':''}${Number(tick.toFixed(1))}°`);
+      });
+      rows.forEach((row,i) => {
+        const x = L+(i+.5)*col;
+        const yy = y(row.value);
+        const positive = row.value >= 0;
+        const colr = positive ? '#e76f51' : '#3d8bd9';
+        const g = add(svg,'g');
+        const valueLabel = `${row.value>0?'+':''}${row.value.toFixed(1)}°`;
+        add(g,'title',{},`${row.name}：近${span}天气温距平${valueLabel}C`);
+        add(g,'line',{x1:x,y1:zeroY,x2:x,y2:yy,stroke:colr,'stroke-width':4.5,'stroke-linecap':'round'});
+        add(g,'circle',{cx:x,cy:yy,r:6.6,fill:colr,stroke:'#fff','stroke-width':2.2});
+        add(g,'text',{
+          x,y:positive?Math.max(18,yy-14):Math.min(H-43,yy+19),
+          'text-anchor':'middle',fill:positive?'#c7563d':'#267ac5',
+          'font-size':11,'font-weight':800
+        },valueLabel);
+        const fullName = String(row.name);
+        const shown = fullName.length>(isProvinceLevel?7:5)
+          ? `${fullName.slice(0,isProvinceLevel?6:4)}…` : fullName;
+        add(g,'text',{x,y:H-24,'text-anchor':'middle',fill:'#3d526c','font-size':isProvinceLevel?10:11,'font-weight':700},shown);
+      });
+      target.appendChild(svg);
+    }
+
     /**
      * 【四、设置与地图渲染 (Settings & Map Rendering)】
      */
     async function renderAnomalyMap() {
+      // 即使地图 CDN 尚未加载，也先渲染独立的距平图；周期与下钻立即响应。
+      const chartIsProvince = anomalyState.anomalyMapLevel === 'province' && !!anomalyState.anomalyProvinceData;
+      const chartData = chartIsProvince
+        ? computeCityAnomalyList(anomalyState.anomalyProvinceData, anomalyState.anomalyTimeSpan)
+        : getProvinceAnomalyData(anomalyState.anomalyTimeSpan);
+      renderAnomalyLollipopChart(chartData, chartIsProvince);
       const container = document.getElementById('anomalyEchartsContainer');
       if (!container || !window.echarts) return;
 
