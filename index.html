@@ -831,28 +831,29 @@
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2">
         <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
           <span class="text-[11px] text-white/60 block">全国平均气温距平</span>
-          <span id="nationalAvgAnomaly" class="diag-val text-xl sm:text-2xl font-black text-rose-400 mt-1 block">+1.1 °C</span>
-          <span id="nationalAvgAnomalyHint" class="text-[10px] text-rose-300/80">整体较常年同期偏暖</span>
+          <span id="nationalAvgAnomaly" class="diag-val text-xl sm:text-2xl font-black text-rose-400 mt-1 block">—</span>
+          <span id="nationalAvgAnomalyHint" class="text-[10px] text-rose-300/80">正在载入动态数据</span>
         </div>
         <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
           <span class="text-[11px] text-white/60 block">最大偏暖省区 (正距平峰值)</span>
-          <span id="maxWarmProvince" class="diag-val text-xl sm:text-2xl font-black text-rose-500 mt-1 block">海南 (+3.4°)</span>
-          <span id="maxWarmDesc" class="text-[10px] text-white/50">华南及沿海明显偏暖</span>
+          <span id="maxWarmProvince" class="diag-val text-xl sm:text-2xl font-black text-rose-500 mt-1 block">—</span>
+          <span id="maxWarmDesc" class="text-[10px] text-white/50">等待天气数据</span>
         </div>
         <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
           <span class="text-[11px] text-white/60 block">最大偏冷省区 (负距平峰值)</span>
-          <span id="maxColdProvince" class="diag-val text-xl sm:text-2xl font-black text-blue-400 mt-1 block">黑龙江 (-2.3°)</span>
-          <span id="maxColdDesc" class="text-[10px] text-white/50">受持续冷高压脊控制</span>
+          <span id="maxColdProvince" class="diag-val text-xl sm:text-2xl font-black text-blue-400 mt-1 block">—</span>
+          <span id="maxColdDesc" class="text-[10px] text-white/50">等待天气数据</span>
         </div>
         <div class="p-3.5 rounded-2xl bg-white/5 border border-white/10">
           <span class="text-[11px] text-white/60 block">偏暖省区占比</span>
-          <span id="warmRatioText" class="diag-val text-xl sm:text-2xl font-black text-amber-300 mt-1 block">80.0%</span>
-          <span id="warmCountText" class="text-[10px] text-white/50">28 个省级行政区气温偏高</span>
+          <span id="warmRatioText" class="diag-val text-xl sm:text-2xl font-black text-amber-300 mt-1 block">—</span>
+          <span id="warmCountText" class="text-[10px] text-white/50">等待天气数据</span>
         </div>
       </div>
-      <p class="text-[10px] text-white/55 leading-relaxed">
-        数据说明：距平数值及常年均温采用独立组件内置的示例参数与时段推演模型，
-        用于功能演示；不是实时气象站观测值或官方气候监测结论。
+      <p id="anomalyDataMethodNote" class="text-[10px] text-white/55 leading-relaxed">
+        数据口径：距平 = 所选周期逐日平均气温 − 2015–2025 年同期气候平均值；按各省代表点计算，南海诸岛不参与省级统计。
+        <span id="anomalyDataUpdateStatus">正在获取动态天气与气候基准数据…</span>
+        <br>数据来源：Open-Meteo 逐日模式历史数据与 ERA5-Land 再分析资料；结果为模型推算，不代表中国气象局官方站点观测距平。
       </p>
     </section>
 
@@ -7958,7 +7959,11 @@
 
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => fetchWeatherData(state.currentCity));
+      refreshBtn.addEventListener('click', () => {
+        fetchWeatherData(state.currentCity);
+        // 同一刷新按钮同步更新全国平均气温距平所需的逐日天气与气候基准数据。
+        if (window.SkyPulseAnomalyModule?.refresh) void window.SkyPulseAnomalyModule.refresh(true);
+      });
     }
 
     const locateBtn = document.getElementById('locateBtn');
@@ -8166,12 +8171,7 @@
     /**
      * 【一、数据结构定义 (Data Structure)】
      * 1. anomalyState: 管理距平图层时段切片(7, 15, 30天)、下钻层级、地图实例及缓存
-     * 2. CHINA_PROVINCES: 全国 34 个省级行政区基准数据库
-     *    每个省份明确配置：
-     *    - normalAvg: 常年气候平均气温（℃）
-     *    - anomaly7:  近 7 天距平值（高振幅天气扰动）
-     *    - anomaly15: 近 15 天距平值（候旬平衡诊断尺度）
-     *    - anomaly30: 近 30 天距平值（向常年均值平滑收敛）
+     * 2. CHINA_PROVINCES: 全国省级代表点坐标与地图匹配元数据；距平值不再内置，统一由动态接口计算。
      */
     const ANOMALY_CHINA_MAP = 'skypulse_anomaly_china';
     const anomalyState = {
@@ -8184,110 +8184,383 @@
       chinaGeoJson: null,
       highResSynced: false,
       controlsBound: false,
-      drillSequence: 0
+      drillSequence: 0,
+      climateNormalsById: {},
+      recentDailyById: {},
+      dataLoading: false,
+      dataReady: false,
+      dataStale: false,
+      lastDataUpdate: null,
+      refreshPromise: null
     };
 
     const CHINA_PROVINCES = [
-      { id: 'beijing', name: '北京', adcode: 110000, capital: '北京', lat: 39.9042, lon: 116.4074, normalAvg: 14.5, anomaly7: 2.4, anomaly15: 1.6, anomaly30: 0.7 },
-      { id: 'tianjin', name: '天津', adcode: 120000, capital: '天津', lat: 39.1255, lon: 117.1901, normalAvg: 14.2, anomaly7: 2.2, anomaly15: 1.5, anomaly30: 0.6 },
-      { id: 'hebei', name: '河北', adcode: 130000, capital: '石家庄', lat: 38.0428, lon: 114.5149, normalAvg: 14.0, anomaly7: 2.0, anomaly15: 1.4, anomaly30: 0.5 },
-      { id: 'shanxi', name: '山西', adcode: 140000, capital: '太原', lat: 37.8706, lon: 112.5489, normalAvg: 11.2, anomaly7: 1.5, anomaly15: 0.9, anomaly30: 0.4 },
-      { id: 'neimenggu', name: '内蒙古', adcode: 150000, capital: '呼和浩特', lat: 40.8424, lon: 111.7492, normalAvg: 7.5, anomaly7: -3.2, anomaly15: -1.4, anomaly30: -0.6 },
-      { id: 'liaoning', name: '辽宁', adcode: 210000, capital: '沈阳', lat: 41.8057, lon: 123.4315, normalAvg: 10.5, anomaly7: -2.4, anomaly15: -0.8, anomaly30: -0.3 },
-      { id: 'jilin', name: '吉林', adcode: 220000, capital: '长春', lat: 43.8171, lon: 125.3235, normalAvg: 7.0, anomaly7: -3.3, anomaly15: -1.7, anomaly30: -0.7 },
-      { id: 'heilongjiang', name: '黑龙江', adcode: 230000, capital: '哈尔滨', lat: 45.8038, lon: 126.5350, normalAvg: 5.2, anomaly7: -3.9, anomaly15: -2.3, anomaly30: -1.0 },
-      { id: 'shanghai', name: '上海', adcode: 310000, capital: '上海', lat: 31.2304, lon: 121.4737, normalAvg: 18.0, anomaly7: 3.4, anomaly15: 2.4, anomaly30: 1.1 },
-      { id: 'jiangsu', name: '江苏', adcode: 320000, capital: '南京', lat: 32.0603, lon: 118.7969, normalAvg: 16.8, anomaly7: 3.0, anomaly15: 2.1, anomaly30: 0.9 },
-      { id: 'zhejiang', name: '浙江', adcode: 330000, capital: '杭州', lat: 30.2741, lon: 120.1551, normalAvg: 18.2, anomaly7: 3.6, anomaly15: 2.6, anomaly30: 1.2 },
-      { id: 'anhui', name: '安徽', adcode: 340000, capital: '合肥', lat: 31.8206, lon: 117.2272, normalAvg: 16.5, anomaly7: 2.8, anomaly15: 1.9, anomaly30: 0.8 },
-      { id: 'fujian', name: '福建', adcode: 350000, capital: '福州', lat: 26.0745, lon: 119.2965, normalAvg: 20.4, anomaly7: 3.8, anomaly15: 2.8, anomaly30: 1.3 },
-      { id: 'jiangxi', name: '江西', adcode: 360000, capital: '南昌', lat: 28.6820, lon: 115.8579, normalAvg: 18.8, anomaly7: 3.5, anomaly15: 2.5, anomaly30: 1.1 },
-      { id: 'shandong', name: '山东', adcode: 370000, capital: '济南', lat: 36.6512, lon: 117.1201, normalAvg: 14.8, anomaly7: 1.9, anomaly15: 1.3, anomaly30: 0.6 },
-      { id: 'henan', name: '河南', adcode: 410000, capital: '郑州', lat: 34.7466, lon: 113.6253, normalAvg: 15.2, anomaly7: 2.3, anomaly15: 1.6, anomaly30: 0.7 },
-      { id: 'hubei', name: '湖北', adcode: 420000, capital: '武汉', lat: 30.5928, lon: 114.3055, normalAvg: 17.5, anomaly7: 3.1, anomaly15: 2.1, anomaly30: 0.9 },
-      { id: 'hunan', name: '湖南', adcode: 430000, capital: '长沙', lat: 28.2282, lon: 112.9388, normalAvg: 18.4, anomaly7: 3.5, anomaly15: 2.5, anomaly30: 1.1 },
-      { id: 'guangdong', name: '广东', adcode: 440000, capital: '广州', lat: 23.1291, lon: 113.2644, normalAvg: 22.5, anomaly7: 3.9, anomaly15: 3.1, anomaly30: 1.5 },
-      { id: 'guangxi', name: '广西', adcode: 450000, capital: '南宁', lat: 22.8170, lon: 108.3665, normalAvg: 22.1, anomaly7: 3.6, anomaly15: 2.8, anomaly30: 1.4 },
-      { id: 'hainan', name: '海南', adcode: 460000, capital: '海口', lat: 20.0440, lon: 110.1999, normalAvg: 24.8, anomaly7: 4.0, anomaly15: 3.4, anomaly30: 1.7 },
-      { id: 'chongqing', name: '重庆', adcode: 500000, capital: '重庆', lat: 29.5630, lon: 106.5516, normalAvg: 19.0, anomaly7: 2.7, anomaly15: 1.8, anomaly30: 0.8 },
-      { id: 'sichuan', name: '四川', adcode: 510000, capital: '成都', lat: 30.5728, lon: 104.0668, normalAvg: 16.5, anomaly7: 1.8, anomaly15: 1.1, anomaly30: 0.5 },
-      { id: 'guizhou', name: '贵州', adcode: 520000, capital: '贵阳', lat: 26.6470, lon: 106.6302, normalAvg: 15.8, anomaly7: 2.2, anomaly15: 1.4, anomaly30: 0.6 },
-      { id: 'yunnan', name: '云南', adcode: 530000, capital: '昆明', lat: 25.0406, lon: 102.7123, normalAvg: 16.2, anomaly7: 1.6, anomaly15: 1.0, anomaly30: 0.5 },
-      { id: 'xizang', name: '西藏', adcode: 540000, capital: '拉萨', lat: 29.6500, lon: 91.1000, normalAvg: 8.8, anomaly7: -1.3, anomaly15: -0.7, anomaly30: -0.2 },
-      { id: 'shaanxi', name: '陕西', adcode: 610000, capital: '西安', lat: 34.3416, lon: 108.9398, normalAvg: 14.5, anomaly7: 1.7, anomaly15: 1.2, anomaly30: 0.5 },
-      { id: 'gansu', name: '甘肃', adcode: 620000, capital: '兰州', lat: 36.0611, lon: 103.8343, normalAvg: 10.5, anomaly7: -0.6, anomaly15: 0.2, anomaly30: 0.2 },
-      { id: 'qinghai', name: '青海', adcode: 630000, capital: '西宁', lat: 36.6232, lon: 101.7789, normalAvg: 6.8, anomaly7: -1.6, anomaly15: -0.9, anomaly30: -0.3 },
-      { id: 'ningxia', name: '宁夏', adcode: 640000, capital: '银川', lat: 38.4872, lon: 106.2309, normalAvg: 9.8, anomaly7: 0.8, anomaly15: 0.5, anomaly30: 0.3 },
-      { id: 'xinjiang', name: '新疆', adcode: 650000, capital: '乌鲁木齐', lat: 43.8256, lon: 87.6168, normalAvg: 8.5, anomaly7: -2.3, anomaly15: -0.6, anomaly30: -0.2 },
-      { id: 'hongkong', name: '香港', adcode: 810000, capital: '香港', lat: 22.3193, lon: 114.1694, normalAvg: 23.5, anomaly7: 3.9, anomaly15: 3.2, anomaly30: 1.5 },
-      { id: 'macao', name: '澳门', adcode: 820000, capital: '澳门', lat: 22.1987, lon: 113.5439, normalAvg: 23.4, anomaly7: 3.8, anomaly15: 3.1, anomaly30: 1.5 },
-      { id: 'taiwan', name: '台湾', adcode: 710000, capital: '台北', lat: 25.0330, lon: 121.5654, normalAvg: 22.0, anomaly7: 3.5, anomaly15: 2.7, anomaly30: 1.2 },
-      { id: 'nanhai', name: '南海诸岛', adcode: 460300, capital: '三沙', lat: 16.83, lon: 112.33, normalAvg: 26.5, anomaly7: 4.0, anomaly15: 3.5, anomaly30: 1.8 }
+      { id: 'beijing', name: '北京', adcode: 110000, capital: '北京', lat: 39.9042, lon: 116.4074},
+      { id: 'tianjin', name: '天津', adcode: 120000, capital: '天津', lat: 39.1255, lon: 117.1901},
+      { id: 'hebei', name: '河北', adcode: 130000, capital: '石家庄', lat: 38.0428, lon: 114.5149},
+      { id: 'shanxi', name: '山西', adcode: 140000, capital: '太原', lat: 37.8706, lon: 112.5489},
+      { id: 'neimenggu', name: '内蒙古', adcode: 150000, capital: '呼和浩特', lat: 40.8424, lon: 111.7492},
+      { id: 'liaoning', name: '辽宁', adcode: 210000, capital: '沈阳', lat: 41.8057, lon: 123.4315},
+      { id: 'jilin', name: '吉林', adcode: 220000, capital: '长春', lat: 43.8171, lon: 125.3235},
+      { id: 'heilongjiang', name: '黑龙江', adcode: 230000, capital: '哈尔滨', lat: 45.8038, lon: 126.5350},
+      { id: 'shanghai', name: '上海', adcode: 310000, capital: '上海', lat: 31.2304, lon: 121.4737},
+      { id: 'jiangsu', name: '江苏', adcode: 320000, capital: '南京', lat: 32.0603, lon: 118.7969},
+      { id: 'zhejiang', name: '浙江', adcode: 330000, capital: '杭州', lat: 30.2741, lon: 120.1551},
+      { id: 'anhui', name: '安徽', adcode: 340000, capital: '合肥', lat: 31.8206, lon: 117.2272},
+      { id: 'fujian', name: '福建', adcode: 350000, capital: '福州', lat: 26.0745, lon: 119.2965},
+      { id: 'jiangxi', name: '江西', adcode: 360000, capital: '南昌', lat: 28.6820, lon: 115.8579},
+      { id: 'shandong', name: '山东', adcode: 370000, capital: '济南', lat: 36.6512, lon: 117.1201},
+      { id: 'henan', name: '河南', adcode: 410000, capital: '郑州', lat: 34.7466, lon: 113.6253},
+      { id: 'hubei', name: '湖北', adcode: 420000, capital: '武汉', lat: 30.5928, lon: 114.3055},
+      { id: 'hunan', name: '湖南', adcode: 430000, capital: '长沙', lat: 28.2282, lon: 112.9388},
+      { id: 'guangdong', name: '广东', adcode: 440000, capital: '广州', lat: 23.1291, lon: 113.2644},
+      { id: 'guangxi', name: '广西', adcode: 450000, capital: '南宁', lat: 22.8170, lon: 108.3665},
+      { id: 'hainan', name: '海南', adcode: 460000, capital: '海口', lat: 20.0440, lon: 110.1999},
+      { id: 'chongqing', name: '重庆', adcode: 500000, capital: '重庆', lat: 29.5630, lon: 106.5516},
+      { id: 'sichuan', name: '四川', adcode: 510000, capital: '成都', lat: 30.5728, lon: 104.0668},
+      { id: 'guizhou', name: '贵州', adcode: 520000, capital: '贵阳', lat: 26.6470, lon: 106.6302},
+      { id: 'yunnan', name: '云南', adcode: 530000, capital: '昆明', lat: 25.0406, lon: 102.7123},
+      { id: 'xizang', name: '西藏', adcode: 540000, capital: '拉萨', lat: 29.6500, lon: 91.1000},
+      { id: 'shaanxi', name: '陕西', adcode: 610000, capital: '西安', lat: 34.3416, lon: 108.9398},
+      { id: 'gansu', name: '甘肃', adcode: 620000, capital: '兰州', lat: 36.0611, lon: 103.8343},
+      { id: 'qinghai', name: '青海', adcode: 630000, capital: '西宁', lat: 36.6232, lon: 101.7789},
+      { id: 'ningxia', name: '宁夏', adcode: 640000, capital: '银川', lat: 38.4872, lon: 106.2309},
+      { id: 'xinjiang', name: '新疆', adcode: 650000, capital: '乌鲁木齐', lat: 43.8256, lon: 87.6168},
+      { id: 'hongkong', name: '香港', adcode: 810000, capital: '香港', lat: 22.3193, lon: 114.1694},
+      { id: 'macao', name: '澳门', adcode: 820000, capital: '澳门', lat: 22.1987, lon: 113.5439},
+      { id: 'taiwan', name: '台湾', adcode: 710000, capital: '台北', lat: 25.0330, lon: 121.5654},
+      { id: 'nanhai', name: '南海诸岛', adcode: 460300, capital: '三沙', lat: 16.83, lon: 112.33}
     ];
 
     /**
-     * 【二、计算逻辑 (Calculation Logic)】
-     * 距平基本模型：Delta T = T_observed - T_normal
-     * 7/15/30天动态映射：直接获取对应时段精细化测算的距平值，并重算观测均温
+     * 【二、动态数据源与距平计算】
+     * 当前期：Open-Meteo Forecast API past_days 逐日平均气温；
+     * 气候基准：ERA5-Land 2015–2025 同期逐日平均气温；
+     * 距平：当前周期逐日均温平均值 - 同期气候平滑均值。
+     * 说明：省级数值取各省代表点，不是省域面积加权值或官方站点监测公报值。
      */
-    function getProvinceAnomalyData(span = 15) {
-      return CHINA_PROVINCES.map(p => {
-        let anomVal = p.anomaly15;
-        if (span === 7) anomVal = p.anomaly7;
-        else if (span === 30) anomVal = p.anomaly30;
+    const ANOMALY_CLIMATE_CACHE_KEY = 'skypulse_anomaly_climate_normals_2015_2025_v2';
+    const ANOMALY_RECENT_CACHE_KEY = 'skypulse_anomaly_recent_daily_v2';
+    const ANOMALY_CLIMATE_START = '2015-01-01';
+    const ANOMALY_CLIMATE_END = '2025-12-31';
+    const ANOMALY_CLIMATE_CACHE_MAX_AGE = 180 * 24 * 60 * 60 * 1000;
+    const ANOMALY_WEATHER_PROVINCES = CHINA_PROVINCES.filter(p => p.name !== '南海诸岛');
 
-        const meanVal = Math.round((p.normalAvg + anomVal) * 10) / 10;
+    function anomalyRound(value, digits = 1) {
+      const power = 10 ** digits;
+      return Math.round((value + Number.EPSILON) * power) / power;
+    }
+
+    function anomalyFinite(value) {
+      return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+    }
+
+    function anomalyReadCache(key) {
+      try {
+        const raw = window.localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (_) { return null; }
+    }
+
+    function anomalyWriteCache(key, value) {
+      try { window.localStorage.setItem(key, JSON.stringify(value)); }
+      catch (error) { console.warn('[SkyPulse距平] 本地缓存写入失败：', error); }
+    }
+
+    function getChinaDateString() {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(new Date());
+      const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+      return `${values.year}-${values.month}-${values.day}`;
+    }
+
+    function anomalyDateLabel(dateText) {
+      if (!dateText) return '—';
+      return String(dateText).replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$1/$2/$3');
+    }
+
+    async function fetchAnomalyJson(url, timeoutMs = 55000) {
+      const controller = new AbortController();
+      const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          cache: 'no-store',
+          referrerPolicy: 'no-referrer',
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error(`天气数据接口请求失败（${response.status}）`);
+        return await response.json();
+      } finally {
+        window.clearTimeout(timer);
+      }
+    }
+
+    function getAnomalyCoordinateParams() {
+      return {
+        latitude: ANOMALY_WEATHER_PROVINCES.map(p => Number(p.lat).toFixed(4)).join(','),
+        longitude: ANOMALY_WEATHER_PROVINCES.map(p => Number(p.lon).toFixed(4)).join(',')
+      };
+    }
+
+    function normalizeAnomalyLocationResponse(payload) {
+      const list = Array.isArray(payload) ? payload : [payload];
+      if (list.length !== ANOMALY_WEATHER_PROVINCES.length) {
+        throw new Error(`接口返回地区数量不匹配（${list.length}/${ANOMALY_WEATHER_PROVINCES.length}）`);
+      }
+      return list;
+    }
+
+    function buildClimateNormalsById(payload) {
+      const locations = normalizeAnomalyLocationResponse(payload);
+      const result = {};
+      locations.forEach((location, index) => {
+        const province = ANOMALY_WEATHER_PROVINCES[index];
+        const times = location?.daily?.time || [];
+        const values = location?.daily?.temperature_2m_mean || [];
+        const sums = Object.create(null);
+        const counts = Object.create(null);
+        times.forEach((dateText, i) => {
+          const value = values[i];
+          if (!anomalyFinite(value)) return;
+          const monthDay = String(dateText).slice(5, 10);
+          sums[monthDay] = (sums[monthDay] || 0) + Number(value);
+          counts[monthDay] = (counts[monthDay] || 0) + 1;
+        });
+        const normals = {};
+        Object.keys(sums).forEach(monthDay => {
+          if (counts[monthDay] > 0) normals[monthDay] = anomalyRound(sums[monthDay] / counts[monthDay], 2);
+        });
+        if (Object.keys(normals).length < 300) {
+          throw new Error(`${province.name} 气候基准数据不完整`);
+        }
+        result[province.id] = normals;
+      });
+      return result;
+    }
+
+    async function loadAnomalyClimateNormals() {
+      const cached = anomalyReadCache(ANOMALY_CLIMATE_CACHE_KEY);
+      const cacheValid = cached?.version === 2
+        && cached?.baseline === '2015-2025'
+        && cached?.byId
+        && (Date.now() - Number(cached.createdAt || 0) < ANOMALY_CLIMATE_CACHE_MAX_AGE);
+      if (cacheValid) {
+        anomalyState.climateNormalsById = cached.byId;
+        return cached.byId;
+      }
+
+      const coords = getAnomalyCoordinateParams();
+      const params = new URLSearchParams({
+        ...coords,
+        start_date: ANOMALY_CLIMATE_START,
+        end_date: ANOMALY_CLIMATE_END,
+        daily: 'temperature_2m_mean',
+        timezone: 'Asia/Shanghai',
+        temperature_unit: 'celsius',
+        models: 'era5_land',
+        cell_selection: 'land'
+      });
+      const payload = await fetchAnomalyJson(`https://archive-api.open-meteo.com/v1/archive?${params.toString()}`);
+      const byId = buildClimateNormalsById(payload);
+      anomalyState.climateNormalsById = byId;
+      anomalyWriteCache(ANOMALY_CLIMATE_CACHE_KEY, {
+        version: 2, baseline: '2015-2025', createdAt: Date.now(), byId
+      });
+      return byId;
+    }
+
+    async function fetchRecentAnomalyWeather() {
+      const coords = getAnomalyCoordinateParams();
+      const params = new URLSearchParams({
+        ...coords,
+        daily: 'temperature_2m_mean',
+        timezone: 'Asia/Shanghai',
+        temperature_unit: 'celsius',
+        past_days: '40',
+        forecast_days: '1',
+        cell_selection: 'land'
+      });
+      const payload = await fetchAnomalyJson(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
+      const locations = normalizeAnomalyLocationResponse(payload);
+      const today = getChinaDateString();
+      const recentById = {};
+      locations.forEach((location, index) => {
+        const province = ANOMALY_WEATHER_PROVINCES[index];
+        const times = location?.daily?.time || [];
+        const values = location?.daily?.temperature_2m_mean || [];
+        const daily = times.map((dateText, i) => ({
+          date: String(dateText),
+          mean: anomalyFinite(values[i]) ? Number(values[i]) : null
+        })).filter(row => row.date < today && anomalyFinite(row.mean))
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .slice(-35);
+        if (!daily.length) throw new Error(`${province.name} 暂无可用的近期逐日均温`);
+        recentById[province.id] = daily;
+      });
+      return recentById;
+    }
+
+    function getSmoothedClimateNormal(normals, dateText) {
+      if (!normals || !dateText) return null;
+      const parts = String(dateText).split('-').map(Number);
+      if (parts.length !== 3 || parts.some(v => !Number.isFinite(v))) return null;
+      // 以闰年 2000 为日历锚点，跨年时仍可正确取前后 7 日。
+      const anchor = Date.UTC(2000, parts[1] - 1, parts[2]);
+      const samples = [];
+      for (let offset = -7; offset <= 7; offset++) {
+        const date = new Date(anchor + offset * 86400000);
+        const monthDay = `${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+        if (anomalyFinite(normals[monthDay])) samples.push(Number(normals[monthDay]));
+      }
+      if (!samples.length) return null;
+      return samples.reduce((sum, value) => sum + value, 0) / samples.length;
+    }
+
+    function getProvinceAnomalyData(span = 15) {
+      return CHINA_PROVINCES.map(province => {
+        if (province.name === '南海诸岛') {
+          return { ...province, value: null, anomaly: null, normalAvg: null, observedMean: null, sampleCount: 0, span };
+        }
+        const daily = anomalyState.recentDailyById[province.id] || [];
+        const normals = anomalyState.climateNormalsById[province.id] || {};
+        const rows = daily.map(day => {
+          const normal = getSmoothedClimateNormal(normals, day.date);
+          return normal === null ? null : { date: day.date, observed: Number(day.mean), normal };
+        }).filter(Boolean).slice(-span);
+        const minimumSamples = Math.max(4, Math.ceil(span * 0.65));
+        if (rows.length < minimumSamples) {
+          return {
+            ...province, value: null, anomaly: null, normalAvg: null, observedMean: null,
+            sampleCount: rows.length, span,
+            periodStart: rows[0]?.date || null, periodEnd: rows[rows.length - 1]?.date || null
+          };
+        }
+        const observedMean = rows.reduce((sum, row) => sum + row.observed, 0) / rows.length;
+        const normalAvg = rows.reduce((sum, row) => sum + row.normal, 0) / rows.length;
+        const anomaly = anomalyRound(observedMean - normalAvg, 1);
         return {
-          name: p.name,
-          adcode: p.adcode,
-          capital: p.capital,
-          lat: p.lat,
-          lon: p.lon,
-          value: anomVal,            // visualMap 映射键
-          anomaly: anomVal,          // 距平值 (℃)
-          normalAvg: p.normalAvg,    // 常年气候均值 (℃)
-          observedMean: meanVal,     // 当前观测/预报均温 (℃)
-          span: span
+          ...province,
+          value: anomaly,
+          anomaly,
+          normalAvg: anomalyRound(normalAvg, 1),
+          observedMean: anomalyRound(observedMean, 1),
+          sampleCount: rows.length,
+          span,
+          periodStart: rows[0]?.date || null,
+          periodEnd: rows[rows.length - 1]?.date || null
         };
       });
     }
 
     /**
-     * 地级市微气候距平动态推演计算
-     * 保证在下钻到地级市后，切换 7/15/30 天时城市数据同样发生响应变化
+     * 地级市下钻的空间细化：以对应省级真实动态距平为中心，叠加轻量微气候偏差。
+     * 城市层级为省级代表点的空间细化估算，不冒充独立城市气象站逐日观测。
      */
     function computeCityAnomalyList(prov, span) {
       if (!anomalyState.anomalyCityDataList || !anomalyState.anomalyCityDataList.length) return [];
-      
-      let baseProvAnom = prov.anomaly15;
-      let scaleRatio = 1.0;
-      if (span === 7) {
-        baseProvAnom = prov.anomaly7;
-        scaleRatio = 1.25;
-      } else if (span === 30) {
-        baseProvAnom = prov.anomaly30;
-        scaleRatio = 0.55;
-      }
-
-      return anomalyState.anomalyCityDataList.map((c, i) => {
-        // 微气候局部地形偏差
-        const cityOffset = (c.baseOffset !== undefined ? c.baseOffset : (((i % 5) - 2) * 0.35));
-        const finalAnom = Math.round((baseProvAnom + cityOffset * scaleRatio) * 10) / 10;
-        const normalVal = Math.round((prov.normalAvg + cityOffset * 0.8) * 10) / 10;
-        const obsVal = Math.round((normalVal + finalAnom) * 10) / 10;
-
+      const provinceRow = getProvinceAnomalyData(span).find(row => row.adcode === prov.adcode);
+      if (!provinceRow || !anomalyFinite(provinceRow.value)) return [];
+      const scaleRatio = span === 7 ? 1.2 : (span === 30 ? 0.55 : 1.0);
+      return anomalyState.anomalyCityDataList.map((city, index) => {
+        const cityOffset = anomalyFinite(city.baseOffset) ? Number(city.baseOffset) : (((index % 5) - 2) * 0.35);
+        const finalAnomaly = anomalyRound(provinceRow.value + cityOffset * scaleRatio, 1);
+        const normalVal = anomalyRound(provinceRow.normalAvg + cityOffset * 0.35, 1);
+        const observedVal = anomalyRound(normalVal + finalAnomaly, 1);
         return {
-          ...c,
+          ...city,
           baseOffset: cityOffset,
-          value: finalAnom,
-          anomaly: finalAnom,
+          value: finalAnomaly,
+          anomaly: finalAnomaly,
           normalAvg: normalVal,
-          observedMean: obsVal,
-          span: span
+          observedMean: observedVal,
+          sampleCount: provinceRow.sampleCount,
+          span,
+          periodStart: provinceRow.periodStart,
+          periodEnd: provinceRow.periodEnd
         };
       });
     }
 
+    function updateAnomalyDataStatus(message, stale = false) {
+      const el = document.getElementById('anomalyDataUpdateStatus');
+      if (!el) return;
+      el.textContent = message;
+      el.style.color = stale ? '#fbbf24' : '';
+    }
+
+    function updateAnomalyDataMethodNote() {
+      const data = getProvinceAnomalyData(anomalyState.anomalyTimeSpan)
+        .filter(row => anomalyFinite(row.value) && row.name !== '南海诸岛');
+      if (!data.length) return;
+      const start = data.map(row => row.periodStart).filter(Boolean).sort()[0];
+      const end = data.map(row => row.periodEnd).filter(Boolean).sort().slice(-1)[0];
+      const updated = anomalyState.lastDataUpdate
+        ? new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(anomalyState.lastDataUpdate)
+        : '时间未知';
+      const stalePrefix = anomalyState.dataStale ? '缓存数据 · ' : '动态更新 · ';
+      updateAnomalyDataStatus(`${stalePrefix}${updated}；样本日期 ${anomalyDateLabel(start)}—${anomalyDateLabel(end)}；当前周期有效地区 ${data.length}/${ANOMALY_WEATHER_PROVINCES.length}`, anomalyState.dataStale);
+    }
+
+    async function refreshAnomalyWeatherData(forceRefresh = false) {
+      if (anomalyState.refreshPromise) return anomalyState.refreshPromise;
+      const task = (async () => {
+        anomalyState.dataLoading = true;
+        updateAnomalyDataStatus('正在同步全国省级代表点逐日均温与 2015–2025 年同期气候基准…');
+        const loading = document.getElementById('anomalyMapLoadingMask');
+        const loadingText = document.getElementById('anomalyLoadingText');
+        if (loadingText) loadingText.textContent = '正在同步全国逐日平均气温与 2015–2025 年气候基准…';
+        if (loading) loading.classList.remove('opacity-0');
+
+        try {
+          const [normals, recent] = await Promise.all([
+            loadAnomalyClimateNormals(),
+            fetchRecentAnomalyWeather()
+          ]);
+          anomalyState.climateNormalsById = normals;
+          anomalyState.recentDailyById = recent;
+          anomalyState.dataReady = true;
+          anomalyState.dataStale = false;
+          anomalyState.lastDataUpdate = new Date();
+          anomalyWriteCache(ANOMALY_RECENT_CACHE_KEY, {
+            version: 2, fetchedAt: anomalyState.lastDataUpdate.toISOString(), byId: recent
+          });
+          updateAnomalyDataMethodNote();
+          await renderAnomalyMap();
+          if (forceRefresh) showAnomalyToast('全国平均气温距平数据已刷新', 'info');
+          return true;
+        } catch (error) {
+          console.warn('[SkyPulse距平] 动态数据更新失败：', error);
+          const climateCache = anomalyReadCache(ANOMALY_CLIMATE_CACHE_KEY);
+          const recentCache = anomalyReadCache(ANOMALY_RECENT_CACHE_KEY);
+          const cachedNormals = anomalyState.climateNormalsById && Object.keys(anomalyState.climateNormalsById).length
+            ? anomalyState.climateNormalsById : climateCache?.byId;
+          if (cachedNormals && recentCache?.version === 2 && recentCache?.byId) {
+            anomalyState.climateNormalsById = cachedNormals;
+            anomalyState.recentDailyById = recentCache.byId;
+            anomalyState.dataReady = true;
+            anomalyState.dataStale = true;
+            anomalyState.lastDataUpdate = recentCache.fetchedAt ? new Date(recentCache.fetchedAt) : null;
+            updateAnomalyDataMethodNote();
+            updateAnomalyDataStatus(`暂时无法连接天气接口，当前显示上次成功缓存${anomalyState.lastDataUpdate ? `（${new Intl.DateTimeFormat('zh-CN', { timeZone:'Asia/Shanghai', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false }).format(anomalyState.lastDataUpdate)}）` : ''}`, true);
+          } else {
+            anomalyState.dataReady = false;
+            updateAnomalyDataStatus(`动态数据加载失败：${error.message || '网络暂不可用'}；请检查网络后点击顶部刷新按钮重试`, true);
+          }
+          anomalyState.dataLoading = false;
+          await renderAnomalyMap();
+          if (forceRefresh) showAnomalyToast('距平数据刷新失败，请检查网络连接', 'warn');
+          return false;
+        } finally {
+          anomalyState.dataLoading = false;
+          if (loading) loading.classList.add('opacity-0');
+        }
+      })();
+      anomalyState.refreshPromise = task;
+      try { return await task; }
+      finally { if (anomalyState.refreshPromise === task) anomalyState.refreshPromise = null; }
+    }
     /**
      * 【三、地理拓扑数据处理与标准矢量地图加载】
      */
@@ -8377,12 +8650,14 @@
       if (heading) heading.textContent = isProvinceLevel
         ? `【${areaName}】地级市气温距平正负棒棒糖图`
         : '全国各省气温距平正负棒棒糖图';
-      if (subtitle) subtitle.textContent = `近 ${span} 天 · ${data.filter(d => Number.isFinite(d.value) && d.name !== '南海诸岛').length} 个地区 · 横向 0°C 基线，上方偏暖，下方偏冷`;
+      const periodStart = data.map(d => d.periodStart).filter(Boolean).sort()[0];
+      const periodEnd = data.map(d => d.periodEnd).filter(Boolean).sort().slice(-1)[0];
+      if (subtitle) subtitle.textContent = `近 ${span} 天 · ${periodStart && periodEnd ? `${anomalyDateLabel(periodStart)}—${anomalyDateLabel(periodEnd)} · ` : ''}${data.filter(d => anomalyFinite(d.value) && d.name !== '南海诸岛').length} 个地区 · 横向 0°C 基线，上方偏暖，下方偏冷`;
       target.replaceChildren();
-      const rows = data.filter(d => Number.isFinite(d.value) && d.name !== '南海诸岛');
+      const rows = data.filter(d => anomalyFinite(d.value) && d.name !== '南海诸岛');
       if (!rows.length) {
         const empty = document.createElement('p');
-        empty.textContent = '当前地区暂无距平数据';
+        empty.textContent = anomalyState.dataLoading ? '正在获取动态距平数据…' : '当前地区暂无可用距平数据';
         empty.style.cssText = 'padding:42px 10px;text-align:center;color:#64748b;font-size:12px';
         target.appendChild(empty);
         return;
@@ -8451,6 +8726,8 @@
         ? computeCityAnomalyList(anomalyState.anomalyProvinceData, anomalyState.anomalyTimeSpan)
         : getProvinceAnomalyData(anomalyState.anomalyTimeSpan);
       renderAnomalyLollipopChart(chartData, chartIsProvince);
+      updateAnomalyDiagnostics(chartData, chartIsProvince);
+      updateAnomalyDataMethodNote();
       const container = document.getElementById('anomalyEchartsContainer');
       if (!container || !window.echarts) return;
 
@@ -8504,6 +8781,7 @@
           formatter: function (params) {
             let d = params.data || data.find(c => c.name === params.name);
             if (!d) return params.name;
+            if (!anomalyFinite(d.anomaly)) return `<div style="padding:8px 10px;color:#fff;font-size:12px;"><strong>${d.name || params.name}</strong><div style="margin-top:5px;color:#cbd5e1;">当前周期暂无足够的逐日温度数据</div></div>`;
             const sign = d.anomaly > 0 ? `+${d.anomaly}` : `${d.anomaly}`;
             const stateDesc = d.anomaly >= 2.0 ? '显著偏高 (偏暖)' : (d.anomaly > 0.5 ? '偏高' : (d.anomaly <= -2.0 ? '显著偏低 (偏冷)' : (d.anomaly < -0.5 ? '偏低' : '接近常年同期')));
             const tagColor = d.anomaly >= 0 ? '#fb7185' : '#67e8f9';
@@ -8525,7 +8803,7 @@
                   </div>
                 </div>
                 <div style="margin-top: 6px; font-size: 11px; color: rgba(255,255,255,0.85);">
-                  实测/预报均温: <strong>${d.observedMean}°C</strong>
+                  所选周期平均气温: <strong>${d.observedMean}°C</strong>
                 </div>
                 ${!isProvinceLevel ? `<div style="margin-top: 6px; font-size: 10px; color: #fde68a;"><i class="fa-solid fa-arrow-down mr-1"></i>点击省份可下钻地级市距平</div>` : ''}
               </div>
@@ -8565,7 +8843,7 @@
             formatter: p => {
               let d = p.data;
               if (!d) d = data.find(item => item.name === p.name);
-              if (!d) return p.name;
+              if (!d || !anomalyFinite(d.value)) return p.name;
               const sign = d.value > 0 ? `+${d.value}` : `${d.value}`;
               return `${d.name}\n${sign}°`;
             }
@@ -8597,8 +8875,7 @@
         }
       });
 
-      // 刷新底部诊断看板
-      updateAnomalyDiagnostics(data, isProvinceLevel);
+      // 底部诊断看板已在地图渲染前同步更新，确保无地图引擎时仍能显示数据。
     }
 
     /**
@@ -8718,15 +8995,28 @@
      * 【六、底部气候诊断卡片统计动态更新】
      */
     function updateAnomalyDiagnostics(dataList, isProvinceLevel = false) {
-      if (!dataList || dataList.length === 0) return;
-      const values = dataList.map(d => d.value);
-      const sum = values.reduce((a, b) => a + b, 0);
-      const avg = Math.round((sum / values.length) * 10) / 10;
+      const validRows = (dataList || []).filter(row => anomalyFinite(row.value) && row.name !== '南海诸岛');
+      if (!validRows.length) {
+        const ids = ['nationalAvgAnomaly', 'maxWarmProvince', 'maxColdProvince', 'warmRatioText'];
+        ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+        const hint = document.getElementById('nationalAvgAnomalyHint');
+        if (hint) hint.textContent = anomalyState.dataLoading ? '正在载入动态数据' : '当前周期暂无有效数据';
+        const warmDesc = document.getElementById('maxWarmDesc');
+        const coldDesc = document.getElementById('maxColdDesc');
+        if (warmDesc) warmDesc.textContent = '等待有效距平数据';
+        if (coldDesc) coldDesc.textContent = '等待有效距平数据';
+        const count = document.getElementById('warmCountText');
+        if (count) count.textContent = '暂无可用地区';
+        return;
+      }
 
-      const maxWarm = dataList.reduce((prev, cur) => (cur.value > prev.value ? cur : prev), dataList[0]);
-      const maxCold = dataList.reduce((prev, cur) => (cur.value < prev.value ? cur : prev), dataList[0]);
-      const warmCount = dataList.filter(d => d.value > 0).length;
-      const warmRatio = Math.round((warmCount / dataList.length) * 1000) / 10;
+      const values = validRows.map(row => Number(row.value));
+      const avg = anomalyRound(values.reduce((a, b) => a + b, 0) / values.length, 1);
+      const warmRows = validRows.filter(row => Number(row.value) > 0);
+      const coldRows = validRows.filter(row => Number(row.value) < 0);
+      const maxWarm = warmRows.length ? warmRows.reduce((prev, cur) => cur.value > prev.value ? cur : prev, warmRows[0]) : null;
+      const maxCold = coldRows.length ? coldRows.reduce((prev, cur) => cur.value < prev.value ? cur : prev, coldRows[0]) : null;
+      const warmRatio = anomalyRound((warmRows.length / validRows.length) * 100, 1);
 
       const avgEl = document.getElementById('nationalAvgAnomaly');
       const hintEl = document.getElementById('nationalAvgAnomalyHint');
@@ -8735,26 +9025,22 @@
         avgEl.className = avg >= 0 ? 'diag-val text-xl sm:text-2xl font-black text-rose-400 mt-1 block' : 'diag-val text-xl sm:text-2xl font-black text-blue-400 mt-1 block';
       }
       if (hintEl) {
-        hintEl.textContent = isProvinceLevel ? `【${anomalyState.anomalyProvinceData.name}】全省平均偏${avg >= 0 ? '暖' : '冷'}` : `全国整体较常年同期偏${avg >= 0 ? '暖' : '冷'}`;
+        hintEl.textContent = `${isProvinceLevel ? `【${anomalyState.anomalyProvinceData.name}】` : '全国'}平均较常年同期偏${avg >= 0 ? '暖' : '冷'}`;
         hintEl.className = avg >= 0 ? 'text-[10px] text-rose-300/80' : 'text-[10px] text-blue-300/80';
       }
 
       const warmProvinceEl = document.getElementById('maxWarmProvince');
-      if (warmProvinceEl) warmProvinceEl.textContent = `${maxWarm.name} (+${maxWarm.value.toFixed(1)}°)`;
+      if (warmProvinceEl) warmProvinceEl.textContent = maxWarm ? `${maxWarm.name} (+${Number(maxWarm.value).toFixed(1)}°)` : '暂无正距平';
       const coldProvinceEl = document.getElementById('maxColdProvince');
-      if (coldProvinceEl) coldProvinceEl.textContent = `${maxCold.name} (${maxCold.value > 0 ? '+' : ''}${maxCold.value.toFixed(1)}°)`;
-      
+      if (coldProvinceEl) coldProvinceEl.textContent = maxCold ? `${maxCold.name} (${Number(maxCold.value).toFixed(1)}°)` : '暂无负距平';
       const warmDescEl = document.getElementById('maxWarmDesc');
-      if (warmDescEl) {
-        warmDescEl.textContent = anomalyState.anomalyTimeSpan === 7 ? '受强暖气团与副高控制' : (anomalyState.anomalyTimeSpan === 15 ? '候旬阶段性强偏暖' : '月度气候态平缓偏暖');
-      }
+      if (warmDescEl) warmDescEl.textContent = maxWarm ? '当前周期正距平最大值' : '当前周期未出现正距平';
       const coldDescEl = document.getElementById('maxColdDesc');
-      if (coldDescEl) {
-        coldDescEl.textContent = anomalyState.anomalyTimeSpan === 7 ? '受强冷空气西风槽压制' : (anomalyState.anomalyTimeSpan === 15 ? '受阶段性冷锋侵袭' : '月度平稳略偏凉');
-      }
-
-      document.getElementById('warmRatioText').textContent = `${warmRatio}%`;
-      document.getElementById('warmCountText').textContent = `${warmCount} 个${isProvinceLevel ? '市区' : '省级行政区'}气温偏高`;
+      if (coldDescEl) coldDescEl.textContent = maxCold ? '当前周期负距平最小值' : '当前周期未出现负距平';
+      const warmRatioEl = document.getElementById('warmRatioText');
+      if (warmRatioEl) warmRatioEl.textContent = `${warmRatio.toFixed(1)}%`;
+      const warmCountEl = document.getElementById('warmCountText');
+      if (warmCountEl) warmCountEl.textContent = `${warmRows.length}/${validRows.length} 个${isProvinceLevel ? '地级市' : '省级地区'}偏暖`;
     }
 
     /**
@@ -8863,14 +9149,18 @@
     // 原主系统 renderTemperatureAnomalyMap 的兼容入口
     window.SkyPulseAnomalyModule = Object.freeze({
       syncFromHost: syncAnomalyFromHost,
-      render: renderAnomalyMap
+      render: renderAnomalyMap,
+      refresh: refreshAnomalyWeatherData
     });
 
-    // 页面加载就绪后立即执行
+    // 页面加载后获取动态距平数据；气候基准会缓存，近期逐日数据会重新拉取。
     window.addEventListener('DOMContentLoaded', async () => {
       setupAnomalyControls();
-      await loadStandardChinaGeoJson();
-      renderAnomalyMap();
+      await Promise.allSettled([loadStandardChinaGeoJson(), refreshAnomalyWeatherData(false)]);
+      await renderAnomalyMap();
+      window.setInterval(() => {
+        if (document.visibilityState === 'visible') void refreshAnomalyWeatherData(false);
+      }, 6 * 60 * 60 * 1000);
     });
   
 })();
