@@ -144,10 +144,11 @@
     .region-weather-table tbody tr:hover td:not(.region-sticky):not(.province-sticky) { background: rgba(255,255,255,.055); }
     .region-weather-table tbody tr.region-selected td { background-color: rgba(251,191,36,.09); }
     .region-weather-table tbody tr.region-selected .province-sticky { box-shadow: inset 3px 0 0 #fbbf24; }
-    .region-weather-table .weather-cell { min-width: 64px; cursor: default; }
-    .region-weather-table .weather-cell .weather-temp { display: block; font-size: 11px; font-weight: 900; margin-top: 3px; }
-    .region-weather-table .weather-cell .weather-icon { font-size: 11px; }
-    .region-weather-table .weather-cell .weather-caption { display: block; max-width: 62px; overflow: hidden; text-overflow: ellipsis; color: rgba(255,255,255,.46); font-size: 8px; margin-top: 2px; }
+    .region-weather-table .weather-cell { min-width: 76px; cursor: default; }
+    .region-weather-table .weather-cell .weather-temp { display: block; font-size: 12px; line-height: 1.35; font-weight: 900; margin-top: 3px; }
+    .region-weather-table .weather-cell .weather-icon { display: block; font-size: 27px; line-height: 1.15; margin: 1px auto 3px; }
+    .region-weather-table .weather-cell .weather-icon.weather-emoji { font-family: 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif; filter: drop-shadow(0 1px 1px rgba(15,23,42,.12)); }
+    .region-weather-table .weather-cell .weather-caption { display: block; max-width: 78px; overflow: hidden; text-overflow: ellipsis; white-space: normal; color: #52657b; font-size: 10.5px; line-height: 1.35; font-weight: 750; margin: 3px auto 0; }
 
     .region-range-btn { padding: 7px 10px; border-radius: 9px; font-size: 11px; font-weight: 800; color: rgba(255,255,255,.7); transition: all .18s ease; }
     .region-range-btn.active { color: #0f172a; background: rgba(255,255,255,.94); box-shadow: 0 3px 12px rgba(0,0,0,.15); }
@@ -264,7 +265,7 @@
       .region-weather-table .province-sticky { left: 112px; min-width: 108px; width: 108px; max-width: 108px; }
       .region-weather-table th, .region-weather-table td { padding: 6px 4px; }
       .region-weather-table thead th { min-width: 58px; }
-      .region-weather-table .weather-cell { min-width: 58px; }
+      .region-weather-table .weather-cell { min-width: 72px; }
     }
 
 
@@ -456,10 +457,9 @@
 
 
     /* 2026-11 首页横向宽屏布局与距平图 */
-    .city-live-horizontal-grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(360px,.9fr); gap:20px; align-items:stretch; }
-    .city-live-horizontal-grid > section { min-width:0; margin:0; }
+    .city-live-horizontal-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:20px; align-items:stretch; }
+    .city-live-horizontal-grid > section { min-width:0; width:100%; margin:0; grid-column:1 / -1; }
     .city-live-hero .grid { align-items:center; }
-    @media (max-width:1100px) { .city-live-horizontal-grid { grid-template-columns:1fr; } }
 
     .anomaly-range-btn { padding:7px 11px; border-radius:8px; color:rgba(255,255,255,.72); font-size:11px; font-weight:800; transition:.18s; }
     .anomaly-range-btn.active { color:#1e293b; background:#fff; box-shadow:0 3px 10px rgba(15,23,42,.15); }
@@ -541,6 +541,31 @@
     .sp-live-search-result:hover,.sp-live-search-result:focus,.sp-live-search-result[aria-selected="true"] { background:#eaf4ff; outline:none; }
     .sp-live-search-result small { font-size:10px; color:#71859b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:48%; }
     @media(max-width:640px) { .sp-chart-panel { padding:14px 11px 10px; } .sp-chart-title { font-size:13px; } .sp-chart-legend { gap:9px; } .sp-live-search { max-width:none; } }
+
+    /* 月度档案：近三年同期逐日矩阵（独立样式，不影响其他模块） */
+    .ma3-panel { padding:18px; border:1px solid rgba(255,255,255,.14); border-radius:18px; background:rgba(255,255,255,.055); }
+    .ma3-scroll { width:100%; max-height:620px; overflow:auto; border:1px solid #cbd5e1; border-radius:13px; background:#fff; overscroll-behavior:contain; scrollbar-color:#b8cadd #eef3f8; scrollbar-width:thin; }
+    .ma3-table { width:100%; min-width:1120px; border-collapse:separate; border-spacing:0; table-layout:fixed; color:#334155; font-variant-numeric:tabular-nums; }
+    .ma3-table th,.ma3-table td { padding:9px 10px; text-align:center; white-space:nowrap; border-right:1px solid #e5edf5; border-bottom:1px solid #e5edf5; font-size:11px; }
+    .ma3-table thead th { position:sticky; z-index:8; color:#1e3a5f; background:#eaf2fb; font-weight:850; box-shadow:0 1px 0 #cbd5e1; }
+    .ma3-table thead tr:first-child th { top:0; height:40px; }
+    .ma3-table thead tr:nth-child(2) th { top:40px; height:36px; background:#f3f7fc; }
+    .ma3-table .ma3-first-col { position:sticky; left:0; z-index:10; width:72px; min-width:72px; max-width:72px; background:#edf4fc; color:#1e40af; font-weight:900; }
+    .ma3-table thead .ma3-first-col { z-index:16; background:#dce9f8; }
+    .ma3-table tbody th.ma3-first-col { z-index:5; }
+    .ma3-table .ma3-year-head { font-size:12px; letter-spacing:.02em; }
+    .ma3-table .ma3-metric-head { font-size:10px; color:#52657b; }
+    .ma3-table tbody tr:nth-child(even) td { background:#f8fbff; }
+    .ma3-table tbody tr:hover td,.ma3-table tbody tr:hover th.ma3-first-col { background:#eaf4ff; }
+    .ma3-table .ma3-max { color:#c2410c; font-weight:850; }
+    .ma3-table .ma3-min { color:#0369a1; font-weight:850; }
+    .ma3-table .ma3-precip { color:#0369a1; font-weight:750; }
+    .ma3-table .ma3-weather { display:inline-flex; align-items:center; justify-content:center; gap:5px; color:#334155; font-weight:700; }
+    .ma3-table .ma3-weather-emoji { font-size:16px; line-height:1; }
+    .ma3-table .ma3-empty { color:#94a3b8; font-size:10px; }
+    .ma3-table .ma3-year-divider { border-left:2px solid #cbd9e8; }
+    .ma3-note { color:rgba(255,255,255,.62); font-size:10px; line-height:1.65; }
+    @media(max-width:640px) { .ma3-panel { padding:13px; } .ma3-table th,.ma3-table td { padding:8px 8px; } .ma3-scroll { max-height:560px; } }
   </style>
 </head>
 <body id="appBody" class="min-h-screen text-white font-sans antialiased theme-sunny transition-colors duration-700 relative overflow-x-hidden selection:bg-amber-400 selection:text-slate-900">
@@ -1629,6 +1654,31 @@
           <!-- 动态注入单日卡片 -->
         </div>
       </div>
+
+
+      <!-- 近三年同期逐日气象矩阵：按当前档案城市、档案年份与月份动态获取 -->
+      <div class="ma3-panel space-y-3" id="monthlyArchiveThreeYearPanel">
+        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+          <div>
+            <h3 class="text-sm sm:text-base font-extrabold text-white flex items-center gap-2">
+              <i class="fa-solid fa-table-cells-large text-cyan-300"></i>
+              <span id="monthlyArchiveThreeYearTitle">近三年同期逐日气象对比矩阵</span>
+            </h3>
+            <p class="ma3-note mt-1">按日序横向对比三个年度的最高温、最低温、降水量与天气状况；表头与左侧日序固定，可双向滚动查看</p>
+          </div>
+          <div class="flex items-center gap-2 self-start sm:self-auto">
+            <span id="monthlyArchiveThreeYearStatus" class="text-[10px] text-cyan-200">等待加载历史气象数据…</span>
+            <button id="monthlyArchiveThreeYearRefreshBtn" type="button" class="px-2.5 py-1 rounded-lg border border-white/20 bg-white/10 text-[10px] text-white/80 hover:bg-white/20 transition" title="刷新近三年同期逐日数据"><i class="fa-solid fa-rotate-right"></i></button>
+          </div>
+        </div>
+        <div class="ma3-scroll" tabindex="0" aria-label="近三年逐日气象对比矩阵，可横向和纵向滚动">
+          <table class="ma3-table" id="monthlyArchiveThreeYearMatrix">
+            <thead id="monthlyArchiveThreeYearHead"></thead>
+            <tbody id="monthlyArchiveThreeYearBody"><tr><td colspan="13" class="py-8 text-center text-xs text-slate-400">正在准备近三年同期矩阵…</td></tr></tbody>
+          </table>
+        </div>
+        <p class="ma3-note">数据来源：Open-Meteo 历史天气档案；所选年度为当前档案年份及向前两年。当前进行中的月份优先补充近期预报，尚未发生的日期显示“待观测”。</p>
+      </div>
     </section>
 
     <!-- 底部版权与数据提供说明 -->
@@ -2115,7 +2165,10 @@
         currentProvinceData: null,
         cityDataList: [],
         mapChartInstance: null,
-        chartInstance: null
+        chartInstance: null,
+        threeYearMatrixCache: {},
+        threeYearMatrixRequestId: 0,
+        threeYearMatrixRequestKey: ''
       }
     };
 
@@ -3733,9 +3786,24 @@
       return '其他';
     }
 
+    function regionalWeatherEmoji(code) {
+      const value = Number(code);
+      if (value === 0) return '☀️';
+      if (value === 1) return '🌤️';
+      if (value === 2) return '⛅';
+      if (value === 3) return '☁️';
+      if (value === 45 || value === 48) return '🌫️';
+      if (value >= 51 && value <= 55) return '🌦️';
+      if (value >= 61 && value <= 67) return '🌧️';
+      if ((value >= 71 && value <= 77) || value === 85 || value === 86) return '🌨️';
+      if (value >= 80 && value <= 82) return '🌦️';
+      if (value >= 95) return '⛈️';
+      return '🌥️';
+    }
+
     function regionalWeatherIcon(code) {
       const info = parseWeatherCode(code, 1);
-      return `<i class="fa-solid ${info.icon} weather-icon"></i>`;
+      return `<span class="weather-icon weather-emoji" role="img" aria-label="${info.text}">${regionalWeatherEmoji(code)}</span>`;
     }
 
     function makeRegionalDateParts(dateStr, index) {
@@ -6861,6 +6929,7 @@
       renderMonthlyArchiveChart(archive);
       renderMonthlyArchiveDaysList(archive);
       renderArchiveMonthlyHeatmap();
+      loadMonthlyArchiveThreeYearMatrix();
     }
 
     // 渲染全月逐日气温与降水量双轴走势图
@@ -7091,6 +7160,184 @@
       }
     }
 
+    // 获取单个年份指定月份的逐日历史气象记录。
+    // 当前正在进行的月份改用 forecast API 补齐近期已发生/未来短期数据。
+    async function fetchMonthlyArchiveYearDaily(year, month, coords) {
+      const pad = value => String(value).padStart(2, '0');
+      const monthStart = `${year}-${pad(month)}-01`;
+      const now = new Date();
+      const shanghaiNowText = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(now);
+      const [currentYear, currentMonth] = shanghaiNowText.split('-').map(Number);
+      const isCurrentSelectedMonth = year === currentYear && month === currentMonth;
+      const dailyFields = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum';
+      let url;
+
+      if (isCurrentSelectedMonth) {
+        const params = new URLSearchParams({
+          latitude: String(coords.latitude),
+          longitude: String(coords.longitude),
+          daily: dailyFields,
+          timezone: 'Asia/Shanghai',
+          past_days: '92',
+          forecast_days: '16'
+        });
+        url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
+      } else {
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const monthEnd = `${year}-${pad(month)}-${pad(daysInMonth)}`;
+        const params = new URLSearchParams({
+          latitude: String(coords.latitude),
+          longitude: String(coords.longitude),
+          start_date: monthStart,
+          end_date: monthEnd,
+          daily: dailyFields,
+          timezone: 'Asia/Shanghai'
+        });
+        url = `https://archive-api.open-meteo.com/v1/archive?${params.toString()}`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`天气档案接口请求失败 (${response.status})`);
+      const payload = await response.json();
+      const daily = payload.daily;
+      if (!daily || !Array.isArray(daily.time)) throw new Error('接口未返回逐日气象数据');
+
+      const dayMap = {};
+      daily.time.forEach((dateText, index) => {
+        if (!dateText || !dateText.startsWith(`${year}-${pad(month)}-`)) return;
+        const dayNumber = Number(dateText.slice(8, 10));
+        dayMap[dayNumber] = {
+          date: dateText,
+          maxTemp: finiteWeatherNumber(daily.temperature_2m_max?.[index]),
+          minTemp: finiteWeatherNumber(daily.temperature_2m_min?.[index]),
+          precipitation: finiteWeatherNumber(daily.precipitation_sum?.[index]),
+          weatherCode: finiteWeatherNumber(daily.weather_code?.[index])
+        };
+      });
+      return { year, month, dayMap, source: isCurrentSelectedMonth ? '近期预报补充' : '历史档案', failed: false };
+    }
+
+    function renderMonthlyArchiveThreeYearMatrix(years, month, results, loading = false) {
+      const head = document.getElementById('monthlyArchiveThreeYearHead');
+      const body = document.getElementById('monthlyArchiveThreeYearBody');
+      const title = document.getElementById('monthlyArchiveThreeYearTitle');
+      const status = document.getElementById('monthlyArchiveThreeYearStatus');
+      if (!head || !body) return;
+
+      const city = state.monthlyArchive.city || '当前城市';
+      if (title) title.textContent = `【${city}】${years[0]}—${years[2]}年 ${month}月同期逐日气象对比`;
+      const metrics = ['最高温', '最低温', '降水量', '天气状况'];
+      head.innerHTML = `
+        <tr>
+          <th class="ma3-first-col" rowspan="2" scope="col">日序</th>
+          ${years.map((year, index) => `<th class="ma3-year-head ${index ? 'ma3-year-divider' : ''}" colspan="4" scope="colgroup">${year}年</th>`).join('')}
+        </tr>
+        <tr>
+          ${years.map((year, index) => metrics.map((label, metricIndex) => `<th class="ma3-metric-head ${metricIndex === 0 && index ? 'ma3-year-divider' : ''}" scope="col">${label}</th>`).join('')).join('')}
+        </tr>`;
+
+      const daysInEachYear = years.map(year => new Date(year, month, 0).getDate());
+      const maxDays = Math.max(...daysInEachYear);
+      const currentDateText = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(new Date());
+      const [currentYear, currentMonth, currentDay] = currentDateText.split('-').map(Number);
+
+      const rows = [];
+      for (let dayNumber = 1; dayNumber <= maxDays; dayNumber++) {
+        rows.push(`<tr><th class="ma3-first-col" scope="row">${String(dayNumber).padStart(2, '0')}日</th>`);
+        years.forEach((year, yearIndex) => {
+          const record = results?.[year]?.dayMap?.[dayNumber] || null;
+          const noSuchDay = dayNumber > daysInEachYear[yearIndex];
+          const isFuture = year === currentYear && month === currentMonth && dayNumber > currentDay;
+          const unavailableLabel = noSuchDay ? '—' : (isFuture ? '待观测' : (results?.[year]?.failed ? '获取失败' : '暂无数据'));
+          const yearDivider = yearIndex > 0 ? 'ma3-year-divider' : '';
+
+          if (record) {
+            const maxValue = Number.isFinite(record.maxTemp) ? `${convertTemp(record.maxTemp)}°${state.unit}` : '—';
+            const minValue = Number.isFinite(record.minTemp) ? `${convertTemp(record.minTemp)}°${state.unit}` : '—';
+            const precipValue = Number.isFinite(record.precipitation) ? `${record.precipitation.toFixed(1)} mm` : '—';
+            const hasWeather = Number.isFinite(record.weatherCode);
+            const weatherInfo = hasWeather ? parseWeatherCode(record.weatherCode, 1) : null;
+            const weatherMarkup = hasWeather
+              ? `<span class="ma3-weather"><span class="ma3-weather-emoji" aria-hidden="true">${regionalWeatherEmoji(record.weatherCode)}</span><span>${weatherInfo.text}</span></span>`
+              : '<span class="ma3-empty">—</span>';
+            rows.push(`
+              <td class="ma3-max ${yearDivider}">${maxValue}</td>
+              <td class="ma3-min">${minValue}</td>
+              <td class="ma3-precip">${precipValue}</td>
+              <td>${weatherMarkup}</td>`);
+          } else {
+            rows.push(`
+              <td class="ma3-empty ${yearDivider}">${unavailableLabel}</td>
+              <td class="ma3-empty">${unavailableLabel}</td>
+              <td class="ma3-empty">${unavailableLabel}</td>
+              <td class="ma3-empty">${unavailableLabel}</td>`);
+          }
+        });
+        rows.push('</tr>');
+      }
+      body.innerHTML = rows.join('');
+
+      if (status) {
+        const loaded = years.filter(year => results?.[year] && !results[year].failed && Object.keys(results[year].dayMap || {}).length).length;
+        if (loading) {
+          status.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i>正在获取逐日历史数据…';
+        } else if (loaded === years.length) {
+          status.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-300 mr-1"></i>已更新 ${loaded}/${years.length} 个年度`;
+        } else if (loaded > 0) {
+          status.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-300 mr-1"></i>已载入 ${loaded}/${years.length} 个年度，部分数据暂不可用`;
+        } else {
+          status.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-300 mr-1"></i>历史数据暂不可用，请稍后重试';
+        }
+      }
+    }
+
+    async function loadMonthlyArchiveThreeYearMatrix(forceRefresh = false) {
+      const archiveState = state.monthlyArchive;
+      const baseYear = Number(archiveState.year);
+      const month = Number(archiveState.month);
+      const years = [baseYear - 2, baseYear - 1, baseYear];
+      const coords = archiveState.cityCoords;
+      const cacheKey = `${archiveState.city}|${Number(coords?.latitude).toFixed(4)}|${Number(coords?.longitude).toFixed(4)}|${baseYear}|${month}`;
+
+      if (!coords || !Number.isFinite(Number(coords.latitude)) || !Number.isFinite(Number(coords.longitude))) {
+        renderMonthlyArchiveThreeYearMatrix(years, month, {}, false);
+        const status = document.getElementById('monthlyArchiveThreeYearStatus');
+        if (status) status.textContent = '当前城市缺少有效坐标，无法请求逐日历史数据';
+        return;
+      }
+
+      if (!forceRefresh && archiveState.threeYearMatrixCache?.[cacheKey]) {
+        renderMonthlyArchiveThreeYearMatrix(years, month, archiveState.threeYearMatrixCache[cacheKey], false);
+        return;
+      }
+
+      const requestId = (archiveState.threeYearMatrixRequestId || 0) + 1;
+      archiveState.threeYearMatrixRequestId = requestId;
+      archiveState.threeYearMatrixRequestKey = cacheKey;
+      const emptyResults = Object.fromEntries(years.map(year => [year, { year, dayMap: {}, failed: false }]));
+      renderMonthlyArchiveThreeYearMatrix(years, month, emptyResults, true);
+
+      const fetched = await Promise.all(years.map(async year => {
+        try {
+          return await fetchMonthlyArchiveYearDaily(year, month, coords);
+        } catch (error) {
+          console.warn(`月度三年矩阵数据获取失败：${year}年${month}月`, error);
+          return { year, dayMap: {}, failed: true, error: error.message };
+        }
+      }));
+
+      if (archiveState.threeYearMatrixRequestId !== requestId || archiveState.threeYearMatrixRequestKey !== cacheKey) return;
+      const resultMap = Object.fromEntries(fetched.map(item => [item.year, item]));
+      const hasAnyData = fetched.some(item => !item.failed && Object.keys(item.dayMap || {}).length);
+      if (!archiveState.threeYearMatrixCache) archiveState.threeYearMatrixCache = {};
+      if (hasAnyData) archiveState.threeYearMatrixCache[cacheKey] = resultMap;
+      renderMonthlyArchiveThreeYearMatrix(years, month, resultMap, false);
+    }
+
     // 渲染全月逐日水平滑动日志卡片
     function renderMonthlyArchiveDaysList(archive) {
       const container = document.getElementById('monthlyArchiveDaysContainer');
@@ -7159,6 +7406,10 @@
       const tierSelect = document.getElementById('monthlyArchiveTierSelect');
       const yearSelect = document.getElementById('monthlyArchiveYearSelect');
       const monthSelect = document.getElementById('monthlyArchiveMonthSelect');
+      const threeYearRefreshBtn = document.getElementById('monthlyArchiveThreeYearRefreshBtn');
+      if (threeYearRefreshBtn) {
+        threeYearRefreshBtn.addEventListener('click', () => loadMonthlyArchiveThreeYearMatrix(true));
+      }
 
       // 默认档案选择广州 · 系统当前月份的上一年度同期；年份/月度选项随系统日期动态生成。
       if (cityInput) cityInput.value = state.monthlyArchive.city;
