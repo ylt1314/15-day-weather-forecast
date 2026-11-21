@@ -451,6 +451,152 @@
       #loginCover .login-card h2 { font-size: 22px; }
       #loginCover .login-weather-art svg { width: 150%; max-width: none; transform: translateX(-12%); }
     }
+    /* 登录封面增强：浅色调 3D 立体感、跳动线条与动态粒子 */
+    #loginCover .login-perspective-floor {
+      position: fixed;
+      left: -40%;
+      right: -40%;
+      bottom: -30%;
+      height: 74%;
+      z-index: 1;
+      background-image:
+        linear-gradient(to right, rgba(14, 165, 233, 0.20) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(14, 165, 233, 0.20) 1px, transparent 1px);
+      background-size: 48px 48px;
+      transform: perspective(650px) rotateX(65deg);
+      transform-origin: center top;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.78) 32%, rgba(0, 0, 0, 0.96) 100%);
+      mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.78) 32%, rgba(0, 0, 0, 0.96) 100%);
+      animation: loginGridScroll 14s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes loginGridScroll {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 48px; }
+    }
+    #loginParticlesCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+    #loginCover .login-shoot-h {
+      position: fixed;
+      z-index: 2;
+      height: 1.5px;
+      width: 190px;
+      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.85), rgba(2, 132, 199, 0.95), transparent);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.45);
+      animation: loginShootH 6.2s linear infinite;
+      pointer-events: none;
+    }
+    #loginCover .login-shoot-v {
+      position: fixed;
+      z-index: 2;
+      width: 1.5px;
+      height: 150px;
+      background: linear-gradient(180deg, transparent, rgba(56, 189, 248, 0.85), rgba(2, 132, 199, 0.95), transparent);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.45);
+      animation: loginShootV 7.4s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes loginShootH {
+      0% { transform: translateX(-240px); opacity: 0; }
+      15% { opacity: 0.92; }
+      85% { opacity: 0.92; }
+      100% { transform: translateX(115vw); opacity: 0; }
+    }
+    @keyframes loginShootV {
+      0% { transform: translateY(-190px); opacity: 0; }
+      15% { opacity: 0.88; }
+      85% { opacity: 0.88; }
+      100% { transform: translateY(115vh); opacity: 0; }
+    }
+    @keyframes loginJumpBar {
+      0%, 100% { transform: scaleY(0.24); opacity: 0.42; }
+      50% { transform: scaleY(1); opacity: 0.96; }
+    }
+    #loginCover .login-jump-bar {
+      transform-origin: bottom center;
+      animation: loginJumpBar 1.15s ease-in-out infinite;
+    }
+    @keyframes loginOrbitSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes loginOrbitSpinRev {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+    #loginCover .login-orbit-ring {
+      animation: loginOrbitSpin 16s linear infinite;
+    }
+    #loginCover .login-orbit-ring-rev {
+      animation: loginOrbitSpinRev 10s linear infinite;
+    }
+    @keyframes loginScanSweep {
+      0% { transform: translateX(-100%); opacity: 0; }
+      30% { opacity: 0.95; }
+      70% { opacity: 0.95; }
+      100% { transform: translateX(220%); opacity: 0; }
+    }
+    #loginCover .login-scan-beam {
+      animation: loginScanSweep 3.8s ease-in-out infinite;
+    }
+    #loginCover .login-3d-scene {
+      position: relative;
+      z-index: 5;
+      perspective: 1150px;
+      width: 100%;
+      max-width: 28rem;
+    }
+    #loginCover .login-card {
+      overflow: visible !important;
+      transform-style: preserve-3d;
+      transition: transform 0.16s ease-out, box-shadow 0.25s ease !important;
+      box-shadow:
+        0 34px 72px -14px rgba(14, 116, 144, 0.24),
+        0 14px 32px -8px rgba(37, 99, 235, 0.15),
+        0 0 0 1px rgba(56, 189, 248, 0.26),
+        inset 0 1.5px 0 rgba(255, 255, 255, 0.98) !important;
+    }
+    #loginCover .login-3d-backplate-1 {
+      transform: translateZ(-28px) translateY(12px) scale(0.955);
+      box-shadow: 0 24px 46px -12px rgba(2, 132, 199, 0.16);
+    }
+    #loginCover .login-3d-backplate-2 {
+      transform: translateZ(-56px) translateY(24px) scale(0.91);
+      box-shadow: 0 24px 46px -12px rgba(14, 116, 144, 0.11);
+    }
+    #loginCover .login-3d-pop-sm { transform: translateZ(18px); }
+    #loginCover .login-3d-pop { transform: translateZ(34px); }
+    #loginCover #loginSubmitBtn {
+      transform: translateZ(26px);
+      box-shadow:
+        0 12px 24px -6px rgba(37, 99, 235, 0.42),
+        0 4px 0 0 #1e40af,
+        inset 0 1px 0 rgba(255, 255, 255, 0.42) !important;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.2s ease !important;
+    }
+    #loginCover #loginSubmitBtn:hover {
+      transform: translateZ(26px) translateY(-1px);
+      box-shadow:
+        0 16px 30px -6px rgba(37, 99, 235, 0.48),
+        0 5px 0 0 #1e40af,
+        inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+    }
+    #loginCover #loginSubmitBtn:active {
+      transform: translateZ(26px) translateY(2px);
+      box-shadow:
+        0 4px 10px -4px rgba(37, 99, 235, 0.35),
+        0 1px 0 0 #1e40af !important;
+    }
+    #loginCover .login-intel-badge {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 16px 38px rgba(30, 64, 100, 0.11), inset 0 1px rgba(255,255,255,.95);
+    }
     @media (prefers-reduced-motion: reduce) {
       #loginCover *, #loginCover *::before, #loginCover *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
     }
@@ -1784,6 +1930,29 @@
       </svg>
     </div>
 
+    <!-- 3D 透视流动网格地面 + 动态粒子与 3D 线框画布 + 穿梭激光线 -->
+    <div class="login-perspective-floor" aria-hidden="true"></div>
+    <canvas id="loginParticlesCanvas" aria-hidden="true"></canvas>
+    <div class="login-shoot-h" style="top: 19%; left: 0; animation-delay: 0s;" aria-hidden="true"></div>
+    <div class="login-shoot-h" style="top: 78%; left: 0; animation-delay: 3.1s;" aria-hidden="true"></div>
+    <div class="login-shoot-v" style="left: 18%; top: 0; animation-delay: 1.4s;" aria-hidden="true"></div>
+    <div class="login-shoot-v" style="right: 18%; top: 0; animation-delay: 4.2s;" aria-hidden="true"></div>
+
+    <!-- 底部地平线跳动频谱线条 -->
+    <div class="hidden sm:flex items-end justify-center gap-1.5 fixed bottom-6 left-1/2 -translate-x-1/2 z-[4] h-9 px-4 py-1.5 rounded-full bg-white/65 backdrop-blur-md border border-sky-200/80 shadow-md shadow-sky-900/5 pointer-events-none" aria-hidden="true">
+      <span class="text-[9px] font-mono font-bold text-sky-700 mr-1.5 self-center tracking-wider">METEO PULSE</span>
+      <span class="login-jump-bar w-1 h-5 rounded-full bg-sky-400" style="animation-delay: 0.05s;"></span>
+      <span class="login-jump-bar w-1 h-6 rounded-full bg-cyan-500" style="animation-delay: 0.22s;"></span>
+      <span class="login-jump-bar w-1 h-4 rounded-full bg-blue-500" style="animation-delay: 0.38s;"></span>
+      <span class="login-jump-bar w-1 h-6 rounded-full bg-sky-400" style="animation-delay: 0.52s;"></span>
+      <span class="login-jump-bar w-1 h-5 rounded-full bg-cyan-400" style="animation-delay: 0.14s;"></span>
+      <span class="login-jump-bar w-1 h-6 rounded-full bg-sky-600" style="animation-delay: 0.42s;"></span>
+      <span class="login-jump-bar w-1 h-4 rounded-full bg-sky-400" style="animation-delay: 0.66s;"></span>
+      <span class="login-jump-bar w-1 h-6 rounded-full bg-cyan-500" style="animation-delay: 0.28s;"></span>
+      <span class="login-jump-bar w-1 h-5 rounded-full bg-blue-500" style="animation-delay: 0.56s;"></span>
+      <span class="login-jump-bar w-1 h-6 rounded-full bg-sky-400" style="animation-delay: 0.12s;"></span>
+    </div>
+
     <!-- 四角商务气象情报徽章：展示系统能力标签，不伪装成正在刷新的实时数据 -->
     <div class="login-intel-badge login-intel-tl" aria-hidden="true">
       <div class="intel-overline"><span class="intel-dot"></span> SATELLITE RETRIEVAL</div>
@@ -1814,12 +1983,51 @@
       <div class="intel-foot"><span>ISOBAR CONTOURS</span><span>1008–1024 hPa</span></div>
     </div>
 
-    <!-- 登录卡片主体 -->
-    <div class="glass-card login-card rounded-3xl max-w-md w-full p-8 sm:p-9 shadow-2xl border border-white/25 text-white relative overflow-hidden transition-all duration-300">
+    <!-- 3D 立体登录卡片主体 -->
+    <div class="login-3d-scene">
+      <div class="absolute -bottom-8 left-8 right-8 h-10 bg-sky-400/25 blur-2xl rounded-full pointer-events-none"></div>
+      <div id="loginCard3D" class="glass-card login-card rounded-3xl max-w-md w-full p-8 sm:p-9 shadow-2xl border border-white/25 text-white relative transition-all duration-300">
+        <!-- 3D 立体叠层背板 -->
+        <div class="login-3d-backplate-1 absolute inset-0 rounded-3xl bg-sky-50/85 border border-sky-300/60 backdrop-blur-md -z-10 pointer-events-none"></div>
+        <div class="login-3d-backplate-2 absolute inset-0 rounded-3xl bg-cyan-50/65 border border-cyan-300/45 backdrop-blur-sm -z-20 pointer-events-none"></div>
+
+        <!-- 顶部扫描光束 -->
+        <div class="absolute top-0 left-0 right-0 h-[2.5px] rounded-t-3xl overflow-hidden pointer-events-none">
+          <div class="login-scan-beam w-1/3 h-full bg-gradient-to-r from-transparent via-sky-400 to-transparent"></div>
+        </div>
+
+        <!-- 科技 HUD 四角立体框标 -->
+        <div class="absolute -top-1.5 -left-1.5 w-4 h-4 border-t-2 border-l-2 border-sky-500 rounded-tl-md pointer-events-none"></div>
+        <div class="absolute -top-1.5 -right-1.5 w-4 h-4 border-t-2 border-r-2 border-sky-500 rounded-tr-md pointer-events-none"></div>
+        <div class="absolute -bottom-1.5 -left-1.5 w-4 h-4 border-b-2 border-l-2 border-sky-500 rounded-bl-md pointer-events-none"></div>
+        <div class="absolute -bottom-1.5 -right-1.5 w-4 h-4 border-b-2 border-r-2 border-sky-500 rounded-br-md pointer-events-none"></div>
+
+        <!-- 框内顶部 HUD 状态栏 + 跳动频谱线条 -->
+        <div class="login-3d-pop-sm flex items-center justify-between text-[10px] font-mono text-slate-500 mb-4 pb-2.5 border-b border-sky-100">
+          <span class="flex items-center gap-1.5 text-sky-700 font-bold">
+            <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+            SYS.METEO // SECURE PORTAL
+          </span>
+          <div class="flex items-center gap-2">
+            <div class="flex items-end gap-0.5 h-3" aria-hidden="true">
+              <span class="login-jump-bar w-0.5 h-3 bg-sky-400 rounded-full" style="animation-delay: 0.0s;"></span>
+              <span class="login-jump-bar w-0.5 h-2.5 bg-cyan-500 rounded-full" style="animation-delay: 0.2s;"></span>
+              <span class="login-jump-bar w-0.5 h-3 bg-blue-500 rounded-full" style="animation-delay: 0.4s;"></span>
+              <span class="login-jump-bar w-0.5 h-2 bg-sky-400 rounded-full" style="animation-delay: 0.1s;"></span>
+              <span class="login-jump-bar w-0.5 h-3 bg-cyan-400 rounded-full" style="animation-delay: 0.3s;"></span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded bg-sky-50 border border-sky-200 text-sky-700 font-bold">3D</span>
+          </div>
+        </div>
+
       <!-- 顶部品牌图标与平台标识 -->
-      <div class="text-center mb-6">
-        <div class="login-brand-icon w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-indigo-600 flex items-center justify-center text-3xl text-white mx-auto mb-4 shadow-lg ring-4 ring-white/10">
-          <i class="fa-solid fa-cloud-sun"></i>
+      <div class="login-3d-pop text-center mb-6">
+        <div class="relative inline-flex items-center justify-center w-20 h-20 mb-3">
+          <div class="login-orbit-ring absolute inset-0 rounded-full border border-dashed border-sky-400/75"></div>
+          <div class="login-orbit-ring-rev absolute inset-2 rounded-full border border-cyan-400/70"></div>
+          <div class="login-brand-icon relative w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-400 to-indigo-600 flex items-center justify-center text-2xl text-white shadow-lg ring-4 ring-white/10">
+            <i class="fa-solid fa-cloud-sun"></i>
+          </div>
         </div>
         <div class="login-card-chip inline-block px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-semibold mb-2">
           气象观测与智能决策中心
@@ -1896,8 +2104,9 @@
       </form>
 
       <!-- 底部安全与系统状态说明 -->
-      <div class="mt-6 pt-4 border-t border-white/10 text-center">
+      <div class="login-3d-pop-sm mt-6 pt-4 border-t border-white/10 text-center">
         <p class="text-[11px] text-white/50">SkyPulse 智慧气象监测平台 · 动态高保真测算终端</p>
+      </div>
       </div>
     </div>
   </div>
@@ -8373,6 +8582,162 @@
       if (logoutBtn) {
         logoutBtn.addEventListener('click', executeLogout);
       }
+
+      initLoginCover3DEffects();
+    }
+
+    function initLoginCover3DEffects() {
+      const wrapper = document.getElementById('loginCover');
+      const card = document.getElementById('loginCard3D');
+      if (!wrapper || !card || wrapper.dataset.fxBound === 'true') return;
+      wrapper.dataset.fxBound = 'true';
+
+      let mouseNormX = 0;
+      let mouseNormY = 0;
+
+      wrapper.addEventListener('mousemove', function(e) {
+        if (wrapper.classList.contains('hidden')) return;
+        const rect = wrapper.getBoundingClientRect();
+        mouseNormX = (e.clientX - rect.left) / rect.width - 0.5;
+        mouseNormY = (e.clientY - rect.top) / rect.height - 0.5;
+        const rotateY = (mouseNormX * 10).toFixed(2);
+        const rotateX = (-mouseNormY * 10).toFixed(2);
+        card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+      });
+
+      wrapper.addEventListener('mouseleave', function() {
+        mouseNormX = 0;
+        mouseNormY = 0;
+        card.style.transform = 'rotateX(0deg) rotateY(0deg)';
+      });
+
+      const canvas = document.getElementById('loginParticlesCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let width = 0;
+      let height = 0;
+
+      function resizeCanvas() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+
+      const particleCount = 58;
+      const particles = [];
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          z: 0.35 + Math.random() * 0.85,
+          vx: (Math.random() - 0.5) * 0.55,
+          vy: (Math.random() - 0.5) * 0.55,
+          r: 1.5 + Math.random() * 2.2,
+          pulse: Math.random() * Math.PI * 2
+        });
+      }
+
+      const cubeVerts = [
+        [-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1],
+        [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]
+      ];
+      const cubeEdges = [
+        [0,1],[1,2],[2,3],[3,0],
+        [4,5],[5,6],[6,7],[7,4],
+        [0,4],[1,5],[2,6],[3,7]
+      ];
+
+      function draw3DCube(cx, cy, size, rx, ry, alpha) {
+        const cosX = Math.cos(rx), sinX = Math.sin(rx);
+        const cosY = Math.cos(ry), sinY = Math.sin(ry);
+        const projected = cubeVerts.map(([vx, vy, vz]) => {
+          const x1 = vx * cosY - vz * sinY;
+          const z1 = vx * sinY + vz * cosY;
+          const y2 = vy * cosX - z1 * sinX;
+          const z2 = vy * sinX + z1 * cosX;
+          const scale = 3.2 / (3.2 - z2 * 0.55);
+          return [cx + x1 * size * scale, cy + y2 * size * scale];
+        });
+
+        ctx.strokeStyle = `rgba(14, 165, 233, ${alpha})`;
+        ctx.lineWidth = 1.15;
+        ctx.beginPath();
+        for (let i = 0; i < cubeEdges.length; i++) {
+          const [a, b] = cubeEdges[i];
+          ctx.moveTo(projected[a][0], projected[a][1]);
+          ctx.lineTo(projected[b][0], projected[b][1]);
+        }
+        ctx.stroke();
+
+        ctx.fillStyle = `rgba(2, 132, 199, ${alpha * 1.4})`;
+        for (let i = 0; i < projected.length; i++) {
+          ctx.beginPath();
+          ctx.arc(projected[i][0], projected[i][1], 2.1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      let angle = 0;
+      function animateParticles() {
+        if (!wrapper.classList.contains('hidden')) {
+          ctx.clearRect(0, 0, width, height);
+          angle += 0.008;
+
+          if (width >= 768) {
+            draw3DCube(width * 0.16 - mouseNormX * 18, height * 0.50 - mouseNormY * 18, 44, angle * 0.9, angle * 1.2, 0.25);
+            draw3DCube(width * 0.84 - mouseNormX * 22, height * 0.48 - mouseNormY * 22, 52, -angle * 0.7, angle * 1.1, 0.21);
+          }
+
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            p.x += p.vx * p.z;
+            p.y += p.vy * p.z;
+            p.pulse += 0.04;
+
+            if (p.x < -20) p.x = width + 20;
+            if (p.x > width + 20) p.x = -20;
+            if (p.y < -20) p.y = height + 20;
+            if (p.y > height + 20) p.y = -20;
+
+            const px = p.x - mouseNormX * 26 * p.z;
+            const py = p.y - mouseNormY * 26 * p.z;
+
+            for (let j = i + 1; j < particles.length; j++) {
+              const q = particles[j];
+              const qx = q.x - mouseNormX * 26 * q.z;
+              const qy = q.y - mouseNormY * 26 * q.z;
+              const dx = px - qx;
+              const dy = py - qy;
+              const distSq = dx * dx + dy * dy;
+              if (distSq < 19600) {
+                const dist = Math.sqrt(distSq);
+                const lineAlpha = (1 - dist / 140) * 0.28;
+                ctx.strokeStyle = `rgba(14, 165, 233, ${lineAlpha.toFixed(3)})`;
+                ctx.lineWidth = 0.9;
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(qx, qy);
+                ctx.stroke();
+              }
+            }
+
+            const pulseScale = 1 + Math.sin(p.pulse) * 0.28;
+            const radius = p.r * p.z * pulseScale;
+            ctx.fillStyle = `rgba(2, 132, 199, ${(0.28 + 0.32 * p.z).toFixed(2)})`;
+            ctx.beginPath();
+            ctx.arc(px, py, radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        requestAnimationFrame(animateParticles);
+      }
+
+      requestAnimationFrame(animateParticles);
     }
 
     // 初始化应用：优先绑定登录入口，避免任一数据/图表模块初始化异常阻断登录事件。
